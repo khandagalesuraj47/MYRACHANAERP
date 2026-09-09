@@ -1,3 +1,4 @@
+import { createClient } from '@supabase/supabase-js'
 import { supabase } from '../../lib/supabase'
 import type {
   EnhancedMember,
@@ -8,6 +9,20 @@ import type {
   UserTaskAssignment,
 } from '../../types/rbac'
 import type { Profile } from '../../types/foundation'
+
+export interface CreateUserPayload {
+  organizationId: string
+  fullName: string
+  email: string
+  password: string
+  role: 'ADMIN' | 'USER'
+  customRoleId?: string | null
+  departmentId?: string | null
+  siteId?: string | null
+  designation?: string | null
+  employeeCode?: string | null
+  phone?: string | null
+}
 
 export interface SaveMemberPayload {
   memberId: string
@@ -386,6 +401,80 @@ export class PeopleRepository {
       return !error
     } catch {
       return false
+    }
+  }
+
+  /**
+   * Create a new user with email and password without disrupting the current session.
+   */
+  static async createUser(payload: CreateUserPayload): Promise<{ success: boolean; error?: string; userId?: string }> {
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || ''
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
+
+      if (!supabaseUrl || !supabaseAnonKey) {
+        return { success: false, error: 'Supabase credentials missing in environment.' }
+      }
+
+      // 1. Isolated temporary client so active admin session is preserved
+      const tempAuthClient = createClient(supabaseUrl, supabaseAnonKey, {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
+        },
+      })
+
+      const { data: authData, error: authError } = await tempAuthClient.auth.signUp({
+        email: payload.email.trim(),
+        password: payload.password,
+        options: {
+          data: {
+            full_name: payload.fullName.trim(),
+          },
+        },
+      })
+
+      if (authError || !authData.user) {
+        return { success: false, error: authError?.message || 'Failed to create user in authentication system.' }
+      }
+
+      const newUserId = authData.user.id
+
+      // 2. Upsert profile entry
+      try {
+        await supabase.from('profiles').upsert({
+          id: newUserId,
+          email: payload.email.trim(),
+          full_name: payload.fullName.trim(),
+          is_active: true,
+        })
+      } catch (profErr) {
+        console.warn('[PeopleRepository] Profile upsert notice:', profErr)
+      }
+
+      // 3. Link user to the active organization
+      const { error: memberError } = await supabase.from('organization_members').insert({
+        organization_id: payload.organizationId,
+        user_id: newUserId,
+        role: payload.role === 'ADMIN' ? 'ADMIN' : 'USER',
+        custom_role_id: payload.customRoleId || null,
+        department_id: payload.departmentId || null,
+        site_id: payload.siteId || null,
+        designation: payload.designation || null,
+        employee_code: payload.employeeCode || null,
+        phone: payload.phone || null,
+        is_active: true,
+      })
+
+      if (memberError) {
+        return { success: false, error: memberError.message }
+      }
+
+      return { success: true, userId: newUserId }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Unexpected error creating user.'
+      console.error('[PeopleRepository] createUser exception:', err)
+      return { success: false, error: msg }
     }
   }
 }

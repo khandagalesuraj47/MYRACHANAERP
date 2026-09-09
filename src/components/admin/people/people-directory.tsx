@@ -9,6 +9,7 @@ import {
   Settings2,
   RefreshCw,
   AlertCircle,
+  UserPlus,
 } from 'lucide-react'
 import type {
   EnhancedMember,
@@ -19,6 +20,7 @@ import type {
 } from '../../../types/rbac'
 import { PeopleRepository } from '../../../repositories/admin/people-repository'
 import { UserDetailDrawer } from './user-detail-drawer'
+import { CreateUserModal } from './create-user-modal'
 
 interface PeopleDirectoryProps {
   organizationId: string
@@ -41,6 +43,7 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
 
   // Selected member for detail drawer
   const [selectedMember, setSelectedMember] = useState<EnhancedMember | null>(null)
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
   const loadData = useCallback(async () => {
     if (!organizationId) return
@@ -160,6 +163,14 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
         </div>
 
         <div className="flex items-center gap-2.5 self-start sm:self-auto">
+          <button
+            type="button"
+            onClick={() => setIsCreateModalOpen(true)}
+            className="flex items-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 px-3.5 py-2 text-xs font-semibold text-white transition-colors cursor-pointer shadow-md shadow-blue-600/20"
+          >
+            <UserPlus className="h-3.5 w-3.5" />
+            <span>+ Create User</span>
+          </button>
           <button
             type="button"
             onClick={loadData}
@@ -444,6 +455,21 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
           onClose={() => setSelectedMember(null)}
           onSaveSuccess={() => {
             setSelectedMember(null)
+            loadData()
+          }}
+        />
+      )}
+
+      {/* Create New User Modal */}
+      {isCreateModalOpen && (
+        <CreateUserModal
+          organizationId={organizationId}
+          roles={roles}
+          departments={departments}
+          sites={sites}
+          onClose={() => setIsCreateModalOpen(false)}
+          onSuccess={() => {
+            setIsCreateModalOpen(false)
             loadData()
           }}
         />
