@@ -11,6 +11,8 @@ import {
   History,
   ChevronLeft,
   ChevronRight,
+  FolderKanban,
+  Package,
 } from 'lucide-react'
 
 interface NavItem {
@@ -31,7 +33,16 @@ const NAV_SECTIONS: NavSection[] = [
     title: 'COMMAND CENTER',
     items: [
       { name: 'Dashboard', icon: LayoutDashboard, id: 'dashboard' },
-      { name: 'People & Access', icon: Users, id: 'people' },
+      { name: 'Projects & Sites', icon: FolderKanban, id: 'projects' },
+      { name: 'People & Directory', icon: Users, id: 'people' },
+    ],
+  },
+  {
+    title: 'MECHANICAL DEPARTMENT',
+    items: [
+      { name: 'Item Master', icon: Package, id: 'item-master' },
+      { name: 'Asset Master', icon: Cpu, id: 'asset-master' },
+      { name: 'Diesel Requisition', icon: Fuel, id: 'diesel-requisition' },
     ],
   },
   {

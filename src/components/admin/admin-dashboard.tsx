@@ -12,6 +12,10 @@ import { ProcurementView } from './operations/procurement-view'
 import { DynamicFormsView } from './operations/dynamic-forms-view'
 import { ApprovalWorkflowsView } from './operations/approval-workflows-view'
 import { AuditLogsView } from './operations/audit-logs-view'
+import { ProjectsSitesView } from './operations/projects-sites-view'
+import { ItemMasterView } from './mechanical/item-master-view'
+import { AssetMasterView } from './mechanical/asset-master-view'
+import { DieselRequisitionView } from './mechanical/diesel-requisition-view'
 import { AdminRepository, type OrganizationStats } from '../../repositories/admin/admin-repository'
 import { useAuth } from '../../context/auth-context'
 import { supabase } from '../../lib/supabase'
@@ -139,8 +143,16 @@ export function AdminDashboard() {
       pageTitle={
         activeModule === 'dashboard'
           ? 'Overview'
+          : activeModule === 'projects'
+          ? 'Projects & Sites'
           : activeModule === 'people'
-          ? 'People & Access'
+          ? 'People & Directory'
+          : activeModule === 'item-master'
+          ? 'Item Master (Mechanical)'
+          : activeModule === 'asset-master'
+          ? 'Asset Master (Mechanical)'
+          : activeModule === 'diesel-requisition'
+          ? 'Diesel Requisition (Mechanical)'
           : activeModule === 'fuel'
           ? 'Fuel & Diesel Logs'
           : activeModule === 'fleet' || activeModule === 'machines'
@@ -181,8 +193,28 @@ export function AdminDashboard() {
             role={role}
           />
         </>
+      ) : activeModule === 'projects' ? (
+        <ProjectsSitesView
+          organizationId={organization.id}
+          organizationName={organization.name}
+        />
       ) : activeModule === 'people' ? (
         <PeopleDirectory
+          organizationId={organization.id}
+          organizationName={organization.name}
+        />
+      ) : activeModule === 'item-master' ? (
+        <ItemMasterView
+          organizationId={organization.id}
+          organizationName={organization.name}
+        />
+      ) : activeModule === 'asset-master' ? (
+        <AssetMasterView
+          organizationId={organization.id}
+          organizationName={organization.name}
+        />
+      ) : activeModule === 'diesel-requisition' ? (
+        <DieselRequisitionView
           organizationId={organization.id}
           organizationName={organization.name}
         />
@@ -201,7 +233,7 @@ export function AdminDashboard() {
       ) : activeModule === 'audit-logs' ? (
         <AuditLogsView organizationId={organization.id} />
       ) : (
-        <PeopleDirectory
+        <ProjectsSitesView
           organizationId={organization.id}
           organizationName={organization.name}
         />
