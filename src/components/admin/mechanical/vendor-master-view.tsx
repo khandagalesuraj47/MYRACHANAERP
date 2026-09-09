@@ -17,6 +17,7 @@ import {
   CheckCircle2,
   Fuel,
   Truck,
+  Cpu,
 } from 'lucide-react'
 import {
   VendorRepository,
@@ -59,13 +60,20 @@ export function VendorMasterView({ organizationId }: VendorMasterViewProps) {
   const [formCity, setFormCity] = useState('')
   const [formState, setFormState] = useState('Maharashtra')
 
-  // Contractor Terms (Optional)
+  // Contractor Terms (Optional with strict format verification)
   const [formGstNumber, setFormGstNumber] = useState('')
   const [formPanNumber, setFormPanNumber] = useState('')
   const [formAadhaarNumber, setFormAadhaarNumber] = useState('')
   const [formTdsPercentage, setFormTdsPercentage] = useState<number>(1.0)
   const [formSecurityDeposit, setFormSecurityDeposit] = useState<number>(0)
   const [formPaymentTerms, setFormPaymentTerms] = useState('30 Days')
+
+  // Validation Error States
+  const [phoneError, setPhoneError] = useState<string | null>(null)
+  const [panError, setPanError] = useState<string | null>(null)
+  const [gstError, setGstError] = useState<string | null>(null)
+  const [aadhaarError, setAadhaarError] = useState<string | null>(null)
+  const [ifscError, setIfscError] = useState<string | null>(null)
 
   // Bank Details (Optional)
   const [formBankName, setFormBankName] = useState('')
@@ -85,6 +93,13 @@ export function VendorMasterView({ organizationId }: VendorMasterViewProps) {
 
   // View Documents Modal
   const [viewDocsVendor, setViewDocsVendor] = useState<Vendor | null>(null)
+
+  // View Assigned Fleet / Machinery Modal
+  const [viewFleetVendor, setViewFleetVendor] = useState<Vendor | null>(null)
+  const [vendorFleet, setVendorFleet] = useState<
+    Array<{ id: string; assetCode: string; vehicleNumber: string; category: string; isActive: boolean }>
+  >([])
+  const [loadingFleet, setLoadingFleet] = useState(false)
 
   const fetchVendors = useCallback(async () => {
     setLoading(true)
@@ -135,6 +150,14 @@ export function VendorMasterView({ organizationId }: VendorMasterViewProps) {
     setFormDocuments([])
     setFormIsActive(true)
     setFormNotes('')
+
+    // Reset errors
+    setPhoneError(null)
+    setPanError(null)
+    setGstError(null)
+    setAadhaarError(null)
+    setIfscError(null)
+
     setShowModal(true)
   }
 
@@ -164,7 +187,80 @@ export function VendorMasterView({ organizationId }: VendorMasterViewProps) {
     setFormDocuments(vendor.documents || [])
     setFormIsActive(vendor.isActive)
     setFormNotes(vendor.notes || '')
+
+    // Reset errors
+    setPhoneError(null)
+    setPanError(null)
+    setGstError(null)
+    setAadhaarError(null)
+    setIfscError(null)
+
     setShowModal(true)
+  }
+
+  // Open Assigned Fleet Modal
+  const handleOpenFleet = async (vendor: Vendor) => {
+    setViewFleetVendor(vendor)
+    setLoadingFleet(true)
+    const assets = await VendorRepository.getVendorAssets(organizationId, vendor.id)
+    setVendorFleet(assets)
+    setLoadingFleet(false)
+  }
+
+  // Format Handlers with Real-Time Validation
+  const handlePhoneChange = (val: string) => {
+    const clean = val.replace(/[^0-9]/g, '').slice(0, 10)
+    setFormPhone(clean)
+    if (clean && clean.length > 0) {
+      const v = VendorRepository.validatePhone(clean)
+      setPhoneError(v.valid ? null : v.error || 'Invalid phone')
+    } else {
+      setPhoneError(null)
+    }
+  }
+
+  const handlePanChange = (val: string) => {
+    const clean = val.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 10)
+    setFormPanNumber(clean)
+    if (clean && clean.length > 0) {
+      const v = VendorRepository.validatePan(clean)
+      setPanError(v.valid ? null : v.error || 'Invalid PAN')
+    } else {
+      setPanError(null)
+    }
+  }
+
+  const handleGstChange = (val: string) => {
+    const clean = val.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 15)
+    setFormGstNumber(clean)
+    if (clean && clean.length > 0) {
+      const v = VendorRepository.validateGst(clean)
+      setGstError(v.valid ? null : v.error || 'Invalid GSTIN')
+    } else {
+      setGstError(null)
+    }
+  }
+
+  const handleAadhaarChange = (val: string) => {
+    const clean = val.replace(/[^0-9]/g, '').slice(0, 12)
+    setFormAadhaarNumber(clean)
+    if (clean && clean.length > 0) {
+      const v = VendorRepository.validateAadhaar(clean)
+      setAadhaarError(v.valid ? null : v.error || 'Invalid Aadhaar')
+    } else {
+      setAadhaarError(null)
+    }
+  }
+
+  const handleIfscChange = (val: string) => {
+    const clean = val.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 11)
+    setFormIfscCode(clean)
+    if (clean && clean.length > 0) {
+      const v = VendorRepository.validateIfsc(clean)
+      setIfscError(v.valid ? null : v.error || 'Invalid IFSC')
+    } else {
+      setIfscError(null)
+    }
   }
 
   // Document Upload Handler
@@ -194,10 +290,47 @@ export function VendorMasterView({ organizationId }: VendorMasterViewProps) {
     setFormDocuments((prev) => prev.filter((d) => d.id !== docId))
   }
 
+  // Submit Handler with Validation Checks
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!formVendorName.trim()) {
       alert('Vendor / Firm Name is required.')
+      return
+    }
+
+    // Validate all fields
+    const pCheck = VendorRepository.validatePhone(formPhone)
+    if (!pCheck.valid) {
+      setPhoneError(pCheck.error || null)
+      alert(pCheck.error)
+      return
+    }
+
+    const panCheck = VendorRepository.validatePan(formPanNumber)
+    if (!panCheck.valid) {
+      setPanError(panCheck.error || null)
+      alert(panCheck.error)
+      return
+    }
+
+    const gstCheck = VendorRepository.validateGst(formGstNumber)
+    if (!gstCheck.valid) {
+      setGstError(gstCheck.error || null)
+      alert(gstCheck.error)
+      return
+    }
+
+    const adCheck = VendorRepository.validateAadhaar(formAadhaarNumber)
+    if (!adCheck.valid) {
+      setAadhaarError(adCheck.error || null)
+      alert(adCheck.error)
+      return
+    }
+
+    const ifscCheck = VendorRepository.validateIfsc(formIfscCode)
+    if (!ifscCheck.valid) {
+      setIfscError(ifscCheck.error || null)
+      alert(ifscCheck.error)
       return
     }
 
@@ -319,6 +452,8 @@ export function VendorMasterView({ organizationId }: VendorMasterViewProps) {
         v.vendorCode.toLowerCase().includes(q) ||
         (v.contactPerson && v.contactPerson.toLowerCase().includes(q)) ||
         (v.phone && v.phone.toLowerCase().includes(q)) ||
+        (v.panNumber && v.panNumber.toLowerCase().includes(q)) ||
+        (v.gstNumber && v.gstNumber.toLowerCase().includes(q)) ||
         (v.city && v.city.toLowerCase().includes(q))
       if (!match) return false
     }
@@ -347,7 +482,7 @@ export function VendorMasterView({ organizationId }: VendorMasterViewProps) {
             </h1>
           </div>
           <p className="text-xs text-slate-500">
-            Registered directory of Purchase Vendors (Petrol Pumps, Fuel, Spares) &amp; Contractor Vendors (Machinery &amp; Vehicle Rental).
+            Registered directory of Purchase Vendors (Fuel / Pumps / Spares) &amp; Contractor Vendors (Machinery / Equipment Rental).
           </p>
         </div>
 
@@ -396,7 +531,7 @@ export function VendorMasterView({ organizationId }: VendorMasterViewProps) {
       {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         <div className="p-3.5 rounded-xl border border-slate-200 bg-white shadow-xs">
-          <span className="text-[11px] font-semibold text-slate-500">Total Vendors</span>
+          <span className="text-[11px] font-semibold text-slate-500">Total Registered</span>
           <div className="text-xl font-bold font-mono text-slate-900 mt-1">{totalCount}</div>
         </div>
         <div className="p-3.5 rounded-xl border border-blue-200 bg-blue-50/50 shadow-xs">
@@ -414,7 +549,7 @@ export function VendorMasterView({ organizationId }: VendorMasterViewProps) {
           <div className="text-xl font-bold font-mono text-amber-900 mt-1">{contractorCount}</div>
         </div>
         <div className="p-3.5 rounded-xl border border-emerald-200 bg-emerald-50/50 shadow-xs">
-          <span className="text-[11px] font-semibold text-emerald-700">Active Vendors</span>
+          <span className="text-[11px] font-semibold text-emerald-700">Active</span>
           <div className="text-xl font-bold font-mono text-emerald-900 mt-1">{activeCount}</div>
         </div>
         <div className="p-3.5 rounded-xl border border-rose-200 bg-rose-50/50 shadow-xs">
@@ -429,7 +564,7 @@ export function VendorMasterView({ organizationId }: VendorMasterViewProps) {
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
           <input
             type="text"
-            placeholder="Search vendor by name, code, contact person, phone, city..."
+            placeholder="Search vendor by name, code, contact person, phone, PAN, GST..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-200 bg-white text-xs text-slate-800 placeholder-slate-400 focus:outline-hidden focus:border-amber-500 shadow-xs"
@@ -474,7 +609,7 @@ export function VendorMasterView({ organizationId }: VendorMasterViewProps) {
             aria-label="Filter by status"
             className="px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-xs text-slate-700 focus:outline-hidden"
           >
-            <option value="ALL">All Statuses</option>
+            <option value="ALL">All Status</option>
             <option value="ACTIVE">Active Only</option>
             <option value="INACTIVE">Inactive Only</option>
           </select>
@@ -492,7 +627,7 @@ export function VendorMasterView({ organizationId }: VendorMasterViewProps) {
             </div>
             <p className="text-xs font-semibold text-slate-700">No vendors found</p>
             <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
-              Click &quot;+ New Vendor&quot; to register your first Petrol Pump or Machinery Rental Contractor.
+              Click &quot;+ New Vendor&quot; to register a Petrol Pump or Machinery Rental Contractor.
             </p>
           </div>
         ) : (
@@ -502,8 +637,9 @@ export function VendorMasterView({ organizationId }: VendorMasterViewProps) {
                 <tr className="border-b border-slate-200 bg-slate-50/70 font-semibold text-slate-600">
                   <th className="py-3 px-4">Vendor Code &amp; Name</th>
                   <th className="py-3 px-4">Type</th>
-                  <th className="py-3 px-4">Contact Info</th>
-                  <th className="py-3 px-4">Contractor / Tax Terms</th>
+                  <th className="py-3 px-4">Contact &amp; Location</th>
+                  <th className="py-3 px-4">PAN / GST / Terms</th>
+                  <th className="py-3 px-4">Assigned Fleet</th>
                   <th className="py-3 px-4">Documents</th>
                   <th className="py-3 px-4">Status</th>
                   <th className="py-3 px-4 text-right">Actions</th>
@@ -535,7 +671,7 @@ export function VendorMasterView({ organizationId }: VendorMasterViewProps) {
                       <div className="space-y-0.5 text-[11px] text-slate-600">
                         {vendor.contactPerson && <div className="font-medium text-slate-800">{vendor.contactPerson}</div>}
                         {vendor.phone && (
-                          <div className="flex items-center gap-1 text-slate-500">
+                          <div className="flex items-center gap-1 text-slate-500 font-mono">
                             <Phone className="h-2.5 w-2.5" />
                             <span>{vendor.phone}</span>
                           </div>
@@ -553,14 +689,19 @@ export function VendorMasterView({ organizationId }: VendorMasterViewProps) {
                       {vendor.vendorType === 'CONTRACTOR_VENDOR' ? (
                         <div className="space-y-0.5 text-[11px]">
                           {vendor.gstNumber ? (
-                            <div className="font-mono text-[10px] text-slate-600">GST: {vendor.gstNumber}</div>
+                            <div className="font-mono text-[10px] text-slate-800 font-semibold">
+                              GST: {vendor.gstNumber}
+                            </div>
                           ) : (
                             <div className="text-[10px] text-slate-400 italic">No GST</div>
+                          )}
+                          {vendor.panNumber && (
+                            <div className="font-mono text-[10px] text-slate-600">PAN: {vendor.panNumber}</div>
                           )}
                           <div className="flex items-center gap-2 text-[10px] text-slate-500">
                             <span>TDS: <b>{vendor.tdsPercentage}%</b></span>
                             {vendor.securityDepositAmount > 0 && (
-                              <span>Dep: <b>₹{vendor.securityDepositAmount.toLocaleString()}</b></span>
+                              <span>Deposit: <b>₹{vendor.securityDepositAmount.toLocaleString()}</b></span>
                             )}
                           </div>
                         </div>
@@ -569,6 +710,23 @@ export function VendorMasterView({ organizationId }: VendorMasterViewProps) {
                       )}
                     </td>
 
+                    {/* Assigned Fleet / Machinery Link */}
+                    <td className="py-3 px-4">
+                      {vendor.vendorType === 'CONTRACTOR_VENDOR' ? (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenFleet(vendor)}
+                          className="inline-flex items-center gap-1 rounded-lg border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-800 px-2 py-1 text-[10px] font-bold shadow-2xs cursor-pointer"
+                        >
+                          <Cpu className="h-3 w-3 text-amber-600" />
+                          <span>View Fleet</span>
+                        </button>
+                      ) : (
+                        <span className="text-[10px] text-slate-400">—</span>
+                      )}
+                    </td>
+
+                    {/* Stored Documents */}
                     <td className="py-3 px-4">
                       {vendor.documents.length > 0 ? (
                         <button
@@ -703,7 +861,7 @@ export function VendorMasterView({ organizationId }: VendorMasterViewProps) {
               {/* Vendor / Firm Name */}
               <div>
                 <label className="block font-semibold text-slate-700 mb-1">
-                  Firm / Vendor / Contractor Name *
+                  Firm / Vendor / Contractor Name * (Duplicate Checked)
                 </label>
                 <input
                   type="text"
@@ -715,7 +873,7 @@ export function VendorMasterView({ organizationId }: VendorMasterViewProps) {
                 />
               </div>
 
-              {/* Contact Information */}
+              {/* Contact Information with Phone validation */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block text-slate-600 mb-1">Contact Person</label>
@@ -728,20 +886,29 @@ export function VendorMasterView({ organizationId }: VendorMasterViewProps) {
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-600 mb-1">Phone / Mobile</label>
+                  <label className="block text-slate-600 mb-1">
+                    Mobile Phone * (10 Digits)
+                  </label>
                   <input
                     type="tel"
-                    placeholder="Mobile number"
+                    placeholder="e.g. 9876543210"
                     value={formPhone}
-                    onChange={(e) => setFormPhone(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 focus:bg-white focus:outline-hidden"
+                    onChange={(e) => handlePhoneChange(e.target.value)}
+                    className={`w-full px-3 py-2 rounded-xl border font-mono text-slate-900 focus:bg-white focus:outline-hidden ${
+                      phoneError ? 'border-rose-400 bg-rose-50/40' : 'border-slate-200 bg-slate-50'
+                    }`}
                   />
+                  {phoneError ? (
+                    <span className="text-[10px] text-rose-600 font-medium block mt-0.5">{phoneError}</span>
+                  ) : (
+                    <span className="text-[10px] text-slate-400 block mt-0.5">Format: 10 digits starting 6-9</span>
+                  )}
                 </div>
                 <div>
-                  <label className="block text-slate-600 mb-1">Email (Optional)</label>
+                  <label className="block text-slate-600 mb-1">Email Address</label>
                   <input
                     type="email"
-                    placeholder="email@example.com"
+                    placeholder="vendor@example.com"
                     value={formEmail}
                     onChange={(e) => setFormEmail(e.target.value)}
                     className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 focus:bg-white focus:outline-hidden"
@@ -752,7 +919,7 @@ export function VendorMasterView({ organizationId }: VendorMasterViewProps) {
               {/* Address & City */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="sm:col-span-2">
-                  <label className="block text-slate-600 mb-1">Address / Site Operating Base</label>
+                  <label className="block text-slate-600 mb-1">Operating Address / Site Base</label>
                   <input
                     type="text"
                     placeholder="Address, workshop, or pump location"
@@ -773,13 +940,13 @@ export function VendorMasterView({ organizationId }: VendorMasterViewProps) {
                 </div>
               </div>
 
-              {/* CONTRACTOR TERMS (OPTIONAL / ऐच्छिक) */}
+              {/* CONTRACTOR TERMS (STRICT FORMATS WITH AUTO-SUGGESTIONS) */}
               <div className="p-3.5 rounded-xl border border-amber-200 bg-amber-50/40 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
                     <FileText className="h-4 w-4 text-amber-700" />
                     <span className="font-bold text-amber-900">
-                      Contractor Terms &amp; Compliance (Optional / देणे गरजेचे पण ऐच्छिक)
+                      Contractor Terms &amp; Compliance (Optional / Recommended)
                     </span>
                   </div>
                   <span className="text-[10px] text-amber-700 font-medium">Non-mandatory</span>
@@ -787,34 +954,57 @@ export function VendorMasterView({ organizationId }: VendorMasterViewProps) {
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-slate-600 mb-1">GST Number</label>
+                    <label className="block text-slate-700 font-semibold mb-1">GSTIN Number</label>
                     <input
                       type="text"
-                      placeholder="e.g. 27AAAAA0000A1Z5"
+                      placeholder="e.g. 27ABCDE1234F1Z5"
                       value={formGstNumber}
-                      onChange={(e) => setFormGstNumber(e.target.value.toUpperCase())}
-                      className="w-full px-3 py-1.5 rounded-lg border border-slate-200 bg-white font-mono text-slate-900 uppercase focus:outline-hidden"
+                      onChange={(e) => handleGstChange(e.target.value)}
+                      className={`w-full px-3 py-1.5 rounded-lg border font-mono text-slate-900 uppercase focus:outline-hidden ${
+                        gstError ? 'border-rose-400 bg-rose-50/40' : 'border-slate-200 bg-white'
+                      }`}
                     />
+                    {gstError ? (
+                      <span className="text-[10px] text-rose-600 font-medium block mt-0.5">{gstError}</span>
+                    ) : (
+                      <span className="text-[10px] text-slate-400 block mt-0.5">Format: 15 chars (e.g. 27AAAAA0000A1Z5)</span>
+                    )}
                   </div>
+
                   <div>
-                    <label className="block text-slate-600 mb-1">PAN Number</label>
+                    <label className="block text-slate-700 font-semibold mb-1">PAN Number</label>
                     <input
                       type="text"
                       placeholder="e.g. ABCDE1234F"
                       value={formPanNumber}
-                      onChange={(e) => setFormPanNumber(e.target.value.toUpperCase())}
-                      className="w-full px-3 py-1.5 rounded-lg border border-slate-200 bg-white font-mono text-slate-900 uppercase focus:outline-hidden"
+                      onChange={(e) => handlePanChange(e.target.value)}
+                      className={`w-full px-3 py-1.5 rounded-lg border font-mono text-slate-900 uppercase focus:outline-hidden ${
+                        panError ? 'border-rose-400 bg-rose-50/40' : 'border-slate-200 bg-white'
+                      }`}
                     />
+                    {panError ? (
+                      <span className="text-[10px] text-rose-600 font-medium block mt-0.5">{panError}</span>
+                    ) : (
+                      <span className="text-[10px] text-slate-400 block mt-0.5">Format: 5 letters + 4 digits + 1 letter</span>
+                    )}
                   </div>
+
                   <div>
-                    <label className="block text-slate-600 mb-1">Aadhaar Number</label>
+                    <label className="block text-slate-700 font-semibold mb-1">Aadhaar Number</label>
                     <input
                       type="text"
-                      placeholder="12 digit Aadhaar"
+                      placeholder="e.g. 123456789012"
                       value={formAadhaarNumber}
-                      onChange={(e) => setFormAadhaarNumber(e.target.value)}
-                      className="w-full px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-900 focus:outline-hidden"
+                      onChange={(e) => handleAadhaarChange(e.target.value)}
+                      className={`w-full px-3 py-1.5 rounded-lg border font-mono text-slate-900 focus:outline-hidden ${
+                        aadhaarError ? 'border-rose-400 bg-rose-50/40' : 'border-slate-200 bg-white'
+                      }`}
                     />
+                    {aadhaarError ? (
+                      <span className="text-[10px] text-rose-600 font-medium block mt-0.5">{aadhaarError}</span>
+                    ) : (
+                      <span className="text-[10px] text-slate-400 block mt-0.5">Format: Exactly 12 digits</span>
+                    )}
                   </div>
                 </div>
 
@@ -854,7 +1044,7 @@ export function VendorMasterView({ organizationId }: VendorMasterViewProps) {
                 </div>
               </div>
 
-              {/* BANK DETAILS (OPTIONAL) */}
+              {/* BANK DETAILS WITH IFSC FORMATTING */}
               <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 space-y-3">
                 <div className="flex items-center gap-1.5">
                   <CreditCard className="h-4 w-4 text-slate-600" />
@@ -866,7 +1056,7 @@ export function VendorMasterView({ organizationId }: VendorMasterViewProps) {
                     <label className="block text-slate-600 mb-1">Bank Name</label>
                     <input
                       type="text"
-                      placeholder="e.g. HDFC / SBI"
+                      placeholder="e.g. HDFC / State Bank of India"
                       value={formBankName}
                       onChange={(e) => setFormBankName(e.target.value)}
                       className="w-full px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-900 focus:outline-hidden"
@@ -876,7 +1066,7 @@ export function VendorMasterView({ organizationId }: VendorMasterViewProps) {
                     <label className="block text-slate-600 mb-1">Account Holder Name</label>
                     <input
                       type="text"
-                      placeholder="Name in passbook"
+                      placeholder="Name on passbook"
                       value={formAccountHolder}
                       onChange={(e) => setFormAccountHolder(e.target.value)}
                       className="w-full px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-900 focus:outline-hidden"
@@ -886,7 +1076,7 @@ export function VendorMasterView({ organizationId }: VendorMasterViewProps) {
                     <label className="block text-slate-600 mb-1">Account Number</label>
                     <input
                       type="text"
-                      placeholder="Account number"
+                      placeholder="Bank account number"
                       value={formAccountNumber}
                       onChange={(e) => setFormAccountNumber(e.target.value)}
                       className="w-full px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-900 font-mono focus:outline-hidden"
@@ -896,20 +1086,29 @@ export function VendorMasterView({ organizationId }: VendorMasterViewProps) {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-slate-600 mb-1">IFSC Code</label>
+                    <label className="block text-slate-700 font-semibold mb-1">IFSC Code</label>
                     <input
                       type="text"
                       placeholder="e.g. HDFC0001234"
                       value={formIfscCode}
-                      onChange={(e) => setFormIfscCode(e.target.value.toUpperCase())}
-                      className="w-full px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-900 font-mono uppercase focus:outline-hidden"
+                      onChange={(e) => handleIfscChange(e.target.value)}
+                      className={`w-full px-3 py-1.5 rounded-lg border font-mono uppercase focus:outline-hidden ${
+                        ifscError ? 'border-rose-400 bg-rose-50/40' : 'border-slate-200 bg-white'
+                      }`}
                     />
+                    {ifscError ? (
+                      <span className="text-[10px] text-rose-600 font-medium block mt-0.5">{ifscError}</span>
+                    ) : (
+                      <span className="text-[10px] text-slate-400 block mt-0.5">
+                        Format: 11 chars, 5th character is zero &apos;0&apos; (e.g. SBIN0001234)
+                      </span>
+                    )}
                   </div>
                   <div>
                     <label className="block text-slate-600 mb-1">Branch Name</label>
                     <input
                       type="text"
-                      placeholder="Branch name"
+                      placeholder="Branch name or city"
                       value={formBranchName}
                       onChange={(e) => setFormBranchName(e.target.value)}
                       className="w-full px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-900 focus:outline-hidden"
@@ -923,7 +1122,9 @@ export function VendorMasterView({ organizationId }: VendorMasterViewProps) {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
                     <Upload className="h-4 w-4 text-slate-600" />
-                    <span className="font-bold text-slate-800">Vendor Documents Section (Store for Future)</span>
+                    <span className="font-bold text-slate-800">
+                      Vendor Documents Section (Stored in Cloud)
+                    </span>
                   </div>
                   {uploadingDoc && (
                     <span className="text-[10px] text-amber-600 font-medium animate-pulse">
@@ -932,7 +1133,6 @@ export function VendorMasterView({ organizationId }: VendorMasterViewProps) {
                   )}
                 </div>
 
-                {/* Upload Buttons */}
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                   {(['AADHAAR', 'PAN', 'GST', 'CHEQUE', 'CONTRACT'] as DocumentType[]).map((type) => (
                     <label
@@ -954,7 +1154,6 @@ export function VendorMasterView({ organizationId }: VendorMasterViewProps) {
                   ))}
                 </div>
 
-                {/* Uploaded Documents List */}
                 {formDocuments.length > 0 && (
                   <div className="space-y-1.5 pt-2 border-t border-slate-200">
                     <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
@@ -997,12 +1196,12 @@ export function VendorMasterView({ organizationId }: VendorMasterViewProps) {
                 )}
               </div>
 
-              {/* Status Toggle & Notes */}
+              {/* Status Toggle */}
               <div className="flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-slate-50">
                 <div>
                   <div className="font-bold text-slate-900">Vendor Active Status</div>
                   <div className="text-[11px] text-slate-500">
-                    When inactive, vendor&apos;s vehicles or pump cannot be selected for new transactions.
+                    When inactive, contractor&apos;s fleet or pump cannot be selected for fuel dispensing.
                   </div>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
@@ -1016,7 +1215,7 @@ export function VendorMasterView({ organizationId }: VendorMasterViewProps) {
                 </label>
               </div>
 
-              {/* Action Buttons */}
+              {/* Actions */}
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
                 <button
                   type="button"
@@ -1034,6 +1233,86 @@ export function VendorMasterView({ organizationId }: VendorMasterViewProps) {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* VIEW ASSIGNED FLEET MODAL */}
+      {viewFleetVendor && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
+          <div className="relative w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl border border-slate-200">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center font-bold">
+                  <Truck className="h-4 w-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">
+                    {viewFleetVendor.vendorName} — Assigned Fleet
+                  </h3>
+                  <p className="text-[11px] text-slate-400 font-mono">{viewFleetVendor.vendorCode}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setViewFleetVendor(null)}
+                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="mt-4 space-y-2 max-h-80 overflow-y-auto">
+              {loadingFleet ? (
+                <div className="py-6 text-center text-xs text-slate-400">Loading linked machinery...</div>
+              ) : vendorFleet.length === 0 ? (
+                <div className="py-6 text-center text-xs text-slate-500 space-y-1">
+                  <p className="font-semibold text-slate-700">No machinery currently bound to this contractor.</p>
+                  <p className="text-[11px] text-slate-400">
+                    To link a vehicle, open Asset Master, click &quot;+ Register Asset&quot;, choose &quot;Contractor Rental&quot;, and select this vendor.
+                  </p>
+                </div>
+              ) : (
+                vendorFleet.map((ast) => (
+                  <div
+                    key={ast.id}
+                    className="flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-slate-50 text-xs"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="h-8 w-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center font-bold text-slate-700">
+                        <Cpu className="h-4 w-4 text-slate-600" />
+                      </div>
+                      <div>
+                        <div className="font-mono font-bold text-slate-900">{ast.vehicleNumber}</div>
+                        <div className="text-[10px] text-slate-500 font-mono">
+                          {ast.assetCode} • {ast.category}
+                        </div>
+                      </div>
+                    </div>
+
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                        ast.isActive
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          : 'bg-rose-50 text-rose-700 border-rose-200'
+                      }`}
+                    >
+                      {ast.isActive ? 'ACTIVE' : 'INACTIVE'}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="mt-5 text-right">
+              <button
+                type="button"
+                onClick={() => setViewFleetVendor(null)}
+                className="px-4 py-1.5 rounded-xl border border-slate-200 text-xs font-medium text-slate-700 hover:bg-slate-50 cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

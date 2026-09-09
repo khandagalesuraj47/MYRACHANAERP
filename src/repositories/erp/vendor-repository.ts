@@ -111,26 +111,131 @@ export const VendorRepository = {
   },
 
   /**
-   * Check if a vendor name already exists in the organization
+   * Field Format Validators with Suggestions
    */
-  async isDuplicateName(organizationId: string, name: string, excludeId?: string): Promise<boolean> {
+  validatePhone(phone: string): { valid: boolean; error?: string } {
+    if (!phone?.trim()) return { valid: true }
+    const clean = phone.replace(/[^0-9]/g, '')
+    if (clean.length !== 10) {
+      return { valid: false, error: 'Mobile number must be exactly 10 digits (e.g. 9876543210).' }
+    }
+    if (!/^[6-9]/.test(clean)) {
+      return { valid: false, error: 'Mobile number must start with 6, 7, 8, or 9.' }
+    }
+    return { valid: true }
+  },
+
+  validatePan(pan: string): { valid: boolean; error?: string } {
+    if (!pan?.trim()) return { valid: true }
+    const clean = pan.trim().toUpperCase()
+    if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(clean)) {
+      return { valid: false, error: 'Invalid PAN format. Must be 5 letters, 4 digits, 1 letter (e.g. ABCDE1234F).' }
+    }
+    return { valid: true }
+  },
+
+  validateGst(gst: string): { valid: boolean; error?: string } {
+    if (!gst?.trim()) return { valid: true }
+    const clean = gst.trim().toUpperCase()
+    if (!/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(clean)) {
+      return { valid: false, error: 'Invalid GSTIN format. 15 characters required (e.g. 27ABCDE1234F1Z5).' }
+    }
+    return { valid: true }
+  },
+
+  validateAadhaar(aadhaar: string): { valid: boolean; error?: string } {
+    if (!aadhaar?.trim()) return { valid: true }
+    const clean = aadhaar.replace(/[^0-9]/g, '')
+    if (clean.length !== 12) {
+      return { valid: false, error: 'Aadhaar number must be exactly 12 digits (e.g. 1234 5678 9012).' }
+    }
+    return { valid: true }
+  },
+
+  validateIfsc(ifsc: string): { valid: boolean; error?: string } {
+    if (!ifsc?.trim()) return { valid: true }
+    const clean = ifsc.trim().toUpperCase()
+    if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(clean)) {
+      return { valid: false, error: 'Invalid IFSC format. 5th character must be zero "0" (e.g. HDFC0001234, SBIN0004567).' }
+    }
+    return { valid: true }
+  },
+
+  /**
+   * Check if a vendor name, PAN, GST, or Phone already exists in the organization
+   */
+  async checkDuplicates(params: {
+    organizationId: string
+    vendorName: string
+    phone?: string
+    panNumber?: string
+    gstNumber?: string
+    excludeId?: string
+  }): Promise<{ isDuplicate: boolean; error?: string }> {
     try {
-      const cleanName = name.trim().toLowerCase()
+      const cleanName = params.vendorName.trim().toLowerCase()
+      const cleanPan = params.panNumber?.trim().toUpperCase()
+      const cleanGst = params.gstNumber?.trim().toUpperCase()
+      const cleanPhone = params.phone ? params.phone.replace(/[^0-9]/g, '') : ''
+
       let query = supabase
         .from('vendors')
-        .select('id, vendor_name')
-        .eq('organization_id', organizationId)
+        .select('id, vendor_name, pan_number, gst_number, phone')
+        .eq('organization_id', params.organizationId)
 
-      if (excludeId) {
-        query = query.neq('id', excludeId)
+      if (params.excludeId) {
+        query = query.neq('id', params.excludeId)
       }
 
       const { data, error } = await query
-      if (error || !data) return false
+      if (error || !data) return { isDuplicate: false }
 
-      return data.some((v) => v.vendor_name.trim().toLowerCase() === cleanName)
+      for (const v of data) {
+        if (v.vendor_name?.trim().toLowerCase() === cleanName) {
+          return { isDuplicate: true, error: `Vendor name "${params.vendorName.trim()}" already exists in your organization.` }
+        }
+        if (cleanPan && v.pan_number?.trim().toUpperCase() === cleanPan) {
+          return { isDuplicate: true, error: `PAN Number "${cleanPan}" is already registered under vendor "${v.vendor_name}".` }
+        }
+        if (cleanGst && v.gst_number?.trim().toUpperCase() === cleanGst) {
+          return { isDuplicate: true, error: `GST Number "${cleanGst}" is already registered under vendor "${v.vendor_name}".` }
+        }
+        if (cleanPhone && v.phone?.replace(/[^0-9]/g, '') === cleanPhone) {
+          return { isDuplicate: true, error: `Phone number "${params.phone}" is already registered under vendor "${v.vendor_name}".` }
+        }
+      }
+
+      return { isDuplicate: false }
     } catch {
-      return false
+      return { isDuplicate: false }
+    }
+  },
+
+  /**
+   * Fetch all assets linked to a specific contractor vendor
+   */
+  async getVendorAssets(
+    organizationId: string,
+    vendorId: string
+  ): Promise<Array<{ id: string; assetCode: string; vehicleNumber: string; category: string; isActive: boolean }>> {
+    try {
+      const { data, error } = await supabase
+        .from('machinery_assets')
+        .select('id, asset_code, vehicle_number, registration_number, asset_category, category, is_active')
+        .eq('organization_id', organizationId)
+        .eq('vendor_id', vendorId)
+
+      if (error || !data) return []
+
+      return data.map((row) => ({
+        id: row.id,
+        assetCode: row.asset_code,
+        vehicleNumber: row.vehicle_number || row.registration_number || 'N/A',
+        category: row.asset_category || row.category || 'OTHER',
+        isActive: row.is_active ?? true,
+      }))
+    } catch {
+      return []
     }
   },
 
@@ -186,12 +291,18 @@ export const VendorRepository = {
     notes?: string
   }): Promise<{ vendor: Vendor | null; error: string | null }> {
     try {
-      // 1. Duplicate name validation
-      const isDup = await this.isDuplicateName(params.organizationId, params.vendorName)
-      if (isDup) {
+      // 1. Duplicate validation (Name, PAN, GST, Phone)
+      const dupCheck = await this.checkDuplicates({
+        organizationId: params.organizationId,
+        vendorName: params.vendorName,
+        phone: params.phone,
+        panNumber: params.panNumber,
+        gstNumber: params.gstNumber,
+      })
+      if (dupCheck.isDuplicate) {
         return {
           vendor: null,
-          error: `Vendor '${params.vendorName.trim()}' already exists. Duplicate vendor names are not allowed.`,
+          error: dupCheck.error || `Vendor '${params.vendorName.trim()}' already exists.`,
         }
       }
 
@@ -308,12 +419,19 @@ export const VendorRepository = {
     }
   ): Promise<{ success: boolean; error: string | null }> {
     try {
-      // Duplicate name validation excluding current ID
-      const isDup = await this.isDuplicateName(params.organizationId, params.vendorName, id)
-      if (isDup) {
+      // Duplicate validation (Name, PAN, GST, Phone) excluding current ID
+      const dupCheck = await this.checkDuplicates({
+        organizationId: params.organizationId,
+        vendorName: params.vendorName,
+        phone: params.phone,
+        panNumber: params.panNumber,
+        gstNumber: params.gstNumber,
+        excludeId: id,
+      })
+      if (dupCheck.isDuplicate) {
         return {
           success: false,
-          error: `Another vendor with name '${params.vendorName.trim()}' already exists.`,
+          error: dupCheck.error || `Another vendor with name '${params.vendorName.trim()}' already exists.`,
         }
       }
 

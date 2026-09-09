@@ -214,6 +214,20 @@ export const AssetCategoryRepository = {
         return { category: null, error: 'Category name is required.' }
       }
 
+      // Strict duplicate check against all existing categories
+      const existingList = await this.getCategories(params.organizationId)
+      const cleanCheck = trimmedName.toLowerCase().replace(/[^a-z0-9]/g, '')
+      const duplicate = existingList.find(
+        (c) => c.name.toLowerCase().replace(/[^a-z0-9]/g, '') === cleanCheck
+      )
+
+      if (duplicate) {
+        return {
+          category: null,
+          error: `Duplicate Category: "${trimmedName}" already exists in the system as "${duplicate.name}".`,
+        }
+      }
+
       // Generate unique alphanumeric code
       const generatedCode =
         'CAT_' +
@@ -268,3 +282,4 @@ export const AssetCategoryRepository = {
     }
   },
 }
+

@@ -69,3 +69,4 @@ CREATE POLICY "asset_categories_org_all" ON public.asset_categories
     FOR ALL
     USING (true)
     WITH CHECK (true);
+
