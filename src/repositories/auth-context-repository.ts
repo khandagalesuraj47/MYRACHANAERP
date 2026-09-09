@@ -19,6 +19,7 @@ export interface UserContextResult {
   membership?: OrganizationMember
   role?: string
   baseRole?: UserRole
+  assignedSite?: { id: string; name: string; code: string; location?: string }
   permissions?: string[]
   assignedTasks?: UserTaskAssignment[]
   errorMessage?: string
@@ -226,7 +227,7 @@ export class AuthContextRepository {
       // Step B: Fetch active membership in organization_members
       const { data: memberData, error: memberError } = await supabase
         .from('organization_members')
-        .select('id, organization_id, user_id, role, is_active, created_at, updated_at')
+        .select('id, organization_id, user_id, role, site_id, is_active, created_at, updated_at')
         .eq('user_id', userId)
         .eq('is_active', true)
         .limit(1)
@@ -386,8 +387,27 @@ export class AuthContextRepository {
         console.debug('[AuthDiagnostic] user_task_assignments query skipped or failed:', tasksErr)
       }
 
-      console.log('[AuthDiagnostic] 5. Final Resolved Role:', rawRole)
-      console.log('[AuthDiagnostic] 6. Final Resolved Organization:', organization.name)
+      // Step E: Fetch assigned site details if site_id is present
+      let assignedSite: { id: string; name: string; code: string; location?: string } | undefined = undefined
+      if (memberData.site_id) {
+        try {
+          const { data: siteData } = await supabase
+            .from('sites')
+            .select('id, name, code, location')
+            .eq('id', memberData.site_id)
+            .maybeSingle()
+          if (siteData) {
+            assignedSite = {
+              id: siteData.id,
+              name: siteData.name,
+              code: siteData.code,
+              location: siteData.location,
+            }
+          }
+        } catch {
+          // ignore
+        }
+      }
 
       return {
         status: 'SUCCESS',
@@ -398,6 +418,7 @@ export class AuthContextRepository {
         membership,
         role: rawRole,
         baseRole,
+        assignedSite,
         permissions: [],
         assignedTasks,
       }

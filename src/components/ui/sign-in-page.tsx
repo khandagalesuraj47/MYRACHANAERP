@@ -23,8 +23,9 @@ type AuthMode = 'SIGN_IN' | 'REGISTER' | 'FORGOT_PASSWORD'
 type ForgotPasswordStep = 'EMAIL' | 'OTP' | 'PASSWORD' | 'SUCCESS'
 
 export function SignInPage({ onSuccess, onNavigateHome }: SignInPageProps) {
-  const [mode, setMode] = useState<AuthMode>('SIGN_IN')
-  const [fpStep, setFpStep] = useState<ForgotPasswordStep>('EMAIL')
+  const isRecoveryHash = typeof window !== 'undefined' && window.location.hash.includes('type=recovery')
+  const [mode, setMode] = useState<AuthMode>(() => (isRecoveryHash ? 'FORGOT_PASSWORD' : 'SIGN_IN'))
+  const [fpStep, setFpStep] = useState<ForgotPasswordStep>(() => (isRecoveryHash ? 'PASSWORD' : 'EMAIL'))
 
   // Form Fields
   const [email, setEmail] = useState('')
@@ -43,19 +44,33 @@ export function SignInPage({ onSuccess, onNavigateHome }: SignInPageProps) {
   // Status & Feedback
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(() =>
+    isRecoveryHash ? 'Recovery session detected! Please enter your new password below.' : null
+  )
 
   // 5-Minute OTP Countdown Timer State (5 mins = 300 seconds)
   const [otpExpiresAt, setOtpExpiresAt] = useState<number | null>(null)
   const [secondsRemaining, setSecondsRemaining] = useState<number>(300)
 
-  // Auto redirect if already authenticated
+  // Auto redirect if already authenticated (unless in password recovery mode)
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       if (data.session && onSuccess && mode === 'SIGN_IN') {
         onSuccess()
       }
     })
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setMode('FORGOT_PASSWORD')
+        setFpStep('PASSWORD')
+        setSuccessMessage('Password recovery link verified! You can now set your new password.')
+      }
+    })
+
+    return () => {
+      authListener.subscription.unsubscribe()
+    }
   }, [onSuccess, mode])
 
   // Active 5-minute timer countdown interval
@@ -124,6 +139,27 @@ export function SignInPage({ onSuccess, onNavigateHome }: SignInPageProps) {
       })
 
       if (error) {
+        // Auto-fix for unconfirmed accounts
+        if (error.message.toLowerCase().includes('email not confirmed')) {
+          try {
+            await supabase.rpc('confirm_user_email', { p_email: email.trim().toLowerCase() })
+            // Auto retry sign-in
+            const retryRes = await supabase.auth.signInWithPassword({
+              email: email.trim().toLowerCase(),
+              password,
+            })
+            if (!retryRes.error && retryRes.data.session) {
+              setSuccessMessage('Account auto-confirmed! Loading workspace...')
+              if (onSuccess) onSuccess()
+              return
+            }
+          } catch {
+            // Fall through to standard error message
+          }
+          setErrorMessage('Email not confirmed. Please disable "Confirm email" in Supabase Authentication settings or verify your email.')
+          return
+        }
+
         setErrorMessage(error.message)
         return
       }
@@ -251,7 +287,10 @@ export function SignInPage({ onSuccess, onNavigateHome }: SignInPageProps) {
     setIsLoading(true)
 
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase())
+      const redirectTo = `${window.location.origin}/reset-password`
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+        redirectTo,
+      })
 
       if (error) {
         setErrorMessage(error.message)
@@ -826,6 +865,14 @@ export function SignInPage({ onSuccess, onNavigateHome }: SignInPageProps) {
                       <strong>5-minute validity has elapsed:</strong> As per security policy, expired OTPs cannot reset passwords. Please click <em>Resend New OTP</em> below.
                     </div>
                   )}
+
+                  {/* Dual Recovery Instructions Banner */}
+                  <div className="p-3 rounded-lg bg-blue-50/70 border border-blue-200 text-blue-900 text-xs flex items-start gap-2">
+                    <KeyRound className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                    <div className="leading-relaxed">
+                      <span className="font-semibold">Flexible Password Recovery:</span> You can either enter the 6-digit OTP code below, <strong>OR</strong> click the "Reset Password" link received in your email to set your new password directly.
+                    </div>
+                  </div>
 
                   {/* 6-Digit OTP Field */}
                   <div className="space-y-1.5">

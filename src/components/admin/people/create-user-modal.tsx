@@ -57,6 +57,11 @@ export function CreateUserModal({
       return
     }
 
+    if (!siteId) {
+      setErrorMessage('Please select an assigned site. Every user must be strictly bound to their designated project site.')
+      return
+    }
+
     if (phone.trim() && !/^[6-9]\d{9}$/.test(phone.trim())) {
       setErrorMessage('Please enter a valid 10-digit Indian phone number (starting with 6, 7, 8, or 9).')
       return
@@ -241,21 +246,25 @@ export function CreateUserModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400">
-                Assigned Site
+                Assigned Site <span className="text-rose-400">* (Strict Site-Lock)</span>
               </label>
               <select
+                required
                 value={siteId}
                 onChange={(e) => setSiteId(e.target.value)}
                 disabled={isLoading}
                 className="w-full rounded-lg bg-slate-950 border border-slate-800 px-3 py-2 text-xs text-slate-100 focus:border-blue-500 focus:outline-none"
               >
-                <option value="">-- None / All Sites --</option>
+                <option value="">-- Select Specific Site --</option>
                 {sites.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.name} ({s.code})
                   </option>
                 ))}
               </select>
+              <p className="text-[10px] text-slate-500">
+                User is strictly locked to this site. Any new sites created later will not be accessible.
+              </p>
             </div>
 
             <div className="space-y-1.5">

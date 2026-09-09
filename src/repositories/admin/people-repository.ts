@@ -406,9 +406,39 @@ export class PeopleRepository {
 
   /**
    * Create a new user with email and password without disrupting the current session.
+   * Leverages PostgreSQL SECURITY DEFINER RPC to auto-confirm email and strictly bind site_id.
    */
   static async createUser(payload: CreateUserPayload): Promise<{ success: boolean; error?: string; userId?: string }> {
     try {
+      // 1. First Attempt: PostgreSQL SECURITY DEFINER RPC (Atomic, Auto-Confirmed, Strict Site Binding)
+      try {
+        const { data: rpcData, error: rpcError } = await supabase.rpc('admin_create_user', {
+          p_organization_id: payload.organizationId,
+          p_email: payload.email.trim().toLowerCase(),
+          p_password: payload.password,
+          p_full_name: payload.fullName.trim(),
+          p_role: payload.role === 'ADMIN' ? 'ADMIN' : 'USER',
+          p_custom_role_id: payload.customRoleId || null,
+          p_department_id: payload.departmentId || null,
+          p_site_id: payload.siteId || null,
+          p_designation: payload.designation || null,
+          p_employee_code: payload.employeeCode || null,
+          p_phone: payload.phone || null,
+        })
+
+        if (!rpcError && rpcData) {
+          if (rpcData.success) {
+            return { success: true, userId: rpcData.user_id }
+          }
+          if (rpcData.error) {
+            return { success: false, error: rpcData.error }
+          }
+        }
+      } catch (rpcErr) {
+        console.warn('[PeopleRepository] admin_create_user RPC skipped or unavailable, using fallback:', rpcErr)
+      }
+
+      // 2. Client-side Fallback (Isolated Auth Client)
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || ''
       const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
 
@@ -416,7 +446,6 @@ export class PeopleRepository {
         return { success: false, error: 'Supabase credentials missing in environment.' }
       }
 
-      // 1. Isolated temporary client so active admin session is preserved
       const tempAuthClient = createClient(supabaseUrl, supabaseAnonKey, {
         auth: {
           persistSession: false,
@@ -425,7 +454,7 @@ export class PeopleRepository {
       })
 
       const { data: authData, error: authError } = await tempAuthClient.auth.signUp({
-        email: payload.email.trim(),
+        email: payload.email.trim().toLowerCase(),
         password: payload.password,
         options: {
           data: {
@@ -440,11 +469,18 @@ export class PeopleRepository {
 
       const newUserId = authData.user.id
 
-      // 2. Upsert profile entry
+      // 3. Auto-confirm email if helper is available
+      try {
+        await supabase.rpc('confirm_user_email', { p_email: payload.email.trim().toLowerCase() })
+      } catch {
+        // Continue if RPC not installed
+      }
+
+      // 4. Upsert profile entry
       try {
         await supabase.from('profiles').upsert({
           id: newUserId,
-          email: payload.email.trim(),
+          email: payload.email.trim().toLowerCase(),
           full_name: payload.fullName.trim(),
           is_active: true,
         })
@@ -452,7 +488,7 @@ export class PeopleRepository {
         console.warn('[PeopleRepository] Profile upsert notice:', profErr)
       }
 
-      // 3. Link user to the active organization
+      // 5. Link user strictly to organization and assigned site
       const { error: memberError } = await supabase.from('organization_members').insert({
         organization_id: payload.organizationId,
         user_id: newUserId,

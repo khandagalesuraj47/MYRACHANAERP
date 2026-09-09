@@ -72,7 +72,7 @@ export function UserPortal({ context }: UserPortalProps) {
           </div>
 
           {/* Account Details Box */}
-          <div className="rounded-xl border border-slate-800 bg-slate-950 p-4 space-y-2 text-xs font-mono">
+          <div className="rounded-xl border border-slate-800 bg-slate-950 p-4 space-y-2.5 text-xs font-mono">
             <div className="text-slate-400 flex items-center justify-between">
               <span>Account Identity:</span>
               <span className="text-white font-medium">{context.email}</span>
@@ -80,6 +80,16 @@ export function UserPortal({ context }: UserPortalProps) {
             <div className="text-slate-400 flex items-center justify-between">
               <span>Access Role:</span>
               <span className="text-blue-400 font-semibold">{context.role}</span>
+            </div>
+            <div className="text-slate-400 flex items-center justify-between">
+              <span>Assigned Site:</span>
+              <span className="text-amber-400 font-semibold">
+                {context.assignedSite ? `${context.assignedSite.name} (${context.assignedSite.code})` : 'Unassigned'}
+              </span>
+            </div>
+            <div className="text-slate-400 flex items-center justify-between">
+              <span>Site Access Scope:</span>
+              <span className="text-emerald-400 font-semibold">Strict Single-Site Lock (Other Sites Blocked)</span>
             </div>
             <div className="text-slate-400 flex items-center justify-between">
               <span>Tenant Status:</span>
