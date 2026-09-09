@@ -7,6 +7,7 @@ import { UserPortal } from './components/user/user-portal'
 import { AuthProvider } from './context/auth-provider'
 import { useAuth } from './context/auth-context'
 import { MandatoryPasswordChangeModal } from './components/ui/mandatory-password-change-modal'
+import { AppUpdateBanner } from './components/common/app-update-banner'
 
 function WorkspaceLoadingScreen({ message = 'Loading your workspace...' }: { message?: string }) {
   return (
@@ -240,6 +241,7 @@ export function App() {
     <BrowserRouter>
       <AuthProvider>
         <MandatoryPasswordGuard />
+        <AppUpdateBanner />
         <Routes>
           <Route path="/login" element={<LoginPageWrapper />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />

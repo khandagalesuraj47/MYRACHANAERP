@@ -64,3 +64,4 @@ END;
 $$;
 
 GRANT EXECUTE ON FUNCTION public.admin_delete_user(UUID, UUID) TO authenticated;
+
