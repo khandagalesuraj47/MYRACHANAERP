@@ -286,11 +286,14 @@ export function SignInPage({ onSuccess, onNavigateHome }: SignInPageProps) {
   }
 
   return (
-    <div className="min-h-screen w-screen flex flex-col md:flex-row overflow-x-hidden overflow-y-auto bg-white text-slate-900 font-sans antialiased">
+    <div className="min-h-screen md:h-screen w-full flex flex-col md:flex-row overflow-x-hidden overflow-y-auto md:overflow-hidden bg-white text-slate-900 font-sans antialiased">
       {/* MOBILE TOP IMAGE BANNER (Shown only on small screens < md) */}
-      <div className="md:hidden w-full h-44 relative overflow-hidden bg-slate-950 shrink-0 select-none">
+      <div className="md:hidden w-full h-48 relative overflow-hidden bg-slate-950 shrink-0 select-none">
         <img
-          src="https://cdn.21st.dev/assets/mirror/0d/0d205a1a31d40e927885b0ec5f603407caa10585b5bc6e8b08240402c7417e86.png"
+          src="/construction-banner.png"
+          onError={(e) => {
+            e.currentTarget.src = 'https://cdn.21st.dev/assets/mirror/0d/0d205a1a31d40e927885b0ec5f603407caa10585b5bc6e8b08240402c7417e86.png'
+          }}
           alt="Rachana Construction Operations"
           className="w-full h-full object-cover opacity-85"
         />
@@ -316,9 +319,12 @@ export function SignInPage({ onSuccess, onNavigateHome }: SignInPageProps) {
       </div>
 
       {/* LEFT PANEL - Construction / Infrastructure Imagery Banner (Desktop) */}
-      <div className="hidden md:flex md:w-1/2 h-full relative overflow-hidden bg-slate-950 select-none">
+      <div className="hidden md:flex md:w-1/2 md:h-full md:min-h-screen relative overflow-hidden bg-slate-950 select-none shrink-0">
         <img
-          src="https://cdn.21st.dev/assets/mirror/0d/0d205a1a31d40e927885b0ec5f603407caa10585b5bc6e8b08240402c7417e86.png"
+          src="/construction-banner.png"
+          onError={(e) => {
+            e.currentTarget.src = 'https://cdn.21st.dev/assets/mirror/0d/0d205a1a31d40e927885b0ec5f603407caa10585b5bc6e8b08240402c7417e86.png'
+          }}
           alt="Rachana Construction Operations"
           className="absolute inset-0 w-full h-full object-cover opacity-85"
         />
@@ -353,7 +359,7 @@ export function SignInPage({ onSuccess, onNavigateHome }: SignInPageProps) {
       </div>
 
       {/* RIGHT PANEL - Authentication & Security Forms */}
-      <div className="w-full md:w-1/2 min-h-full flex items-center justify-center p-6 sm:p-10 lg:p-14 overflow-y-auto bg-white">
+      <div className="w-full md:w-1/2 h-full flex items-center justify-center p-6 sm:p-10 lg:p-14 overflow-y-auto bg-white">
         <div className="w-full max-w-md space-y-6">
           {/* Header with Prominent MY RACHANA ERP Title */}
           <div className="space-y-2 text-left">
