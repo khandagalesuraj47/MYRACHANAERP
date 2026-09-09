@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Eye, EyeOff, ArrowLeft, Loader2, AlertCircle, CheckCircle2, Download } from 'lucide-react'
+import { Eye, EyeOff, ArrowLeft, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { supabase, isSupabaseConfigured } from '../../lib/supabase'
 
 interface SignInPageProps {
@@ -307,32 +307,6 @@ export function SignInPage({ onSuccess, onNavigateHome }: SignInPageProps) {
               )}
             </button>
           </form>
-
-          {/* Android App Download Banner */}
-          <div className="pt-2 border-t border-slate-100">
-            <a
-              href="https://gmhvckxqfarpkfpvuspj.supabase.co/storage/v1/object/public/apk-releases/myrachana-erp.apk"
-              download="myrachana-erp.apk"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-between p-3 rounded-xl bg-slate-50 hover:bg-blue-50/60 border border-slate-200 hover:border-blue-200 transition-all text-left group"
-            >
-              <div className="flex items-center gap-3">
-                <div className="h-8 w-8 rounded-lg bg-blue-600/10 text-blue-600 flex items-center justify-center font-bold">
-                  <Download className="h-4 w-4" />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
-                    Download Android Mobile App (.apk)
-                  </p>
-                  <p className="text-[11px] text-slate-500">
-                    For site supervisors, drivers, and field workers
-                  </p>
-                </div>
-              </div>
-              <span className="text-[11px] font-mono text-blue-600 font-semibold">4.1 MB</span>
-            </a>
-          </div>
         </div>
       </div>
     </div>

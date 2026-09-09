@@ -86,6 +86,19 @@ function NoOrganizationAccessScreen({
   )
 }
 
+function isAdministrator(ctx?: { status: string; role?: string | null; baseRole?: string | null; isMasterAdmin?: boolean } | null): boolean {
+  if (!ctx || ctx.status !== 'SUCCESS') return false
+  const r = ctx.role
+  const b = ctx.baseRole
+  return (
+    r === 'ADMIN' ||
+    r === 'MASTER_ADMIN' ||
+    b === 'ADMIN' ||
+    b === 'MASTER_ADMIN' ||
+    ctx.isMasterAdmin === true
+  )
+}
+
 function RootDispatcher() {
   const { context, loading } = useAuth()
 
@@ -98,7 +111,7 @@ function RootDispatcher() {
   }
 
   if (context.status === 'SUCCESS') {
-    if (context.role === 'ADMIN') {
+    if (isAdministrator(context)) {
       return <Navigate to="/admin" replace />
     }
     return <Navigate to="/app" replace />
@@ -119,7 +132,7 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (context.status === 'SUCCESS') {
-    if (context.role === 'ADMIN') {
+    if (isAdministrator(context)) {
       return <>{children}</>
     }
     // Normal user attempting to access /admin -> redirect to /app
@@ -141,7 +154,7 @@ function UserRoute() {
   }
 
   if (context.status === 'SUCCESS') {
-    if (context.role === 'ADMIN') {
+    if (isAdministrator(context)) {
       // Administrator attempting to access /app -> redirect to /admin
       return <Navigate to="/admin" replace />
     }
@@ -157,7 +170,7 @@ function LoginPageWrapper() {
 
   // If already authenticated and resolved, redirect to appropriate portal
   if (!loading && context?.status === 'SUCCESS') {
-    if (context.role === 'ADMIN') {
+    if (isAdministrator(context)) {
       return <Navigate to="/admin" replace />
     }
     return <Navigate to="/app" replace />
@@ -168,7 +181,7 @@ function LoginPageWrapper() {
       onSuccess={async () => {
         const res = await refreshContext()
         if (res.status === 'SUCCESS') {
-          if (res.role === 'ADMIN') {
+          if (isAdministrator(res)) {
             navigate('/admin', { replace: true })
           } else {
             navigate('/app', { replace: true })

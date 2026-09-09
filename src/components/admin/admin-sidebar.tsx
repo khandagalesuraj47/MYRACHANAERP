@@ -70,31 +70,31 @@ export function AdminSidebar({
 }: AdminSidebarProps) {
   return (
     <aside
-      className={`relative flex flex-col border-r border-slate-800 bg-slate-950 text-slate-300 transition-all duration-300 ease-in-out select-none shrink-0 ${
+      className={`relative flex flex-col border-r border-slate-200 bg-white text-slate-700 transition-all duration-300 ease-in-out select-none shrink-0 ${
         isCollapsed ? 'w-18' : 'w-64'
       }`}
     >
       {/* Brand Header */}
-      <div className="flex h-16 items-center justify-between border-b border-slate-800/80 px-4">
+      <div className="flex h-16 items-center justify-between border-b border-slate-200 px-4">
         {!isCollapsed ? (
           <div className="flex flex-col overflow-hidden text-left">
             <div className="flex items-center gap-2">
-              <span className="font-mono text-[10px] font-bold tracking-widest text-blue-400 uppercase bg-blue-950/80 border border-blue-800/60 px-1.5 py-0.5 rounded">
+              <span className="font-mono text-[10px] font-bold tracking-widest text-blue-700 uppercase bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded">
                 ERP
               </span>
-              <span className="text-xs font-extrabold tracking-tight text-white truncate">
+              <span className="text-xs font-extrabold tracking-tight text-slate-900 truncate">
                 MY RACHANA
               </span>
             </div>
             <span
-              className="text-[11px] font-medium text-slate-400 truncate mt-0.5"
+              className="text-[11px] font-medium text-slate-500 truncate mt-0.5"
               title={organizationName}
             >
               {organizationName}
             </span>
           </div>
         ) : (
-          <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-lg bg-blue-950 border border-blue-800 text-blue-400 font-mono text-xs font-bold">
+          <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 border border-blue-200 text-blue-700 font-mono text-xs font-bold">
             MR
           </div>
         )}
@@ -104,14 +104,14 @@ export function AdminSidebar({
           type="button"
           onClick={onToggleCollapse}
           aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          className="hidden md:flex h-6 w-6 items-center justify-center rounded-md text-slate-400 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer"
+          className="hidden md:flex h-6 w-6 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors cursor-pointer"
         >
           {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
         </button>
       </div>
 
       {/* Navigation Sections */}
-      <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6 scrollbar-thin scrollbar-thumb-slate-800">
+      <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6 scrollbar-thin scrollbar-thumb-slate-200">
         {NAV_SECTIONS.map((section) => (
           <div key={section.title} className="space-y-1">
             {!isCollapsed && (
@@ -132,13 +132,13 @@ export function AdminSidebar({
                     title={isCollapsed ? item.name : undefined}
                     className={`group relative flex w-full items-center rounded-lg px-2.5 py-2 text-xs font-medium transition-colors cursor-pointer ${
                       isActive
-                        ? 'bg-blue-600/15 text-blue-400 border border-blue-500/30'
-                        : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'
+                        ? 'bg-blue-50 text-blue-700 border border-blue-200/80 font-semibold shadow-xs'
+                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                     }`}
                   >
                     <Icon
                       className={`h-4 w-4 shrink-0 transition-colors ${
-                        isActive ? 'text-blue-400' : 'text-slate-400 group-hover:text-slate-200'
+                        isActive ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'
                       }`}
                     />
                     {!isCollapsed && (
@@ -146,7 +146,7 @@ export function AdminSidebar({
                     )}
 
                     {!isCollapsed && item.badge && (
-                      <span className="ml-auto rounded bg-slate-900 px-1.5 py-0.5 text-[9px] font-mono text-slate-400 border border-slate-800">
+                      <span className="ml-auto rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-mono text-slate-600 border border-slate-200">
                         {item.badge}
                       </span>
                     )}
@@ -159,9 +159,9 @@ export function AdminSidebar({
       </div>
 
       {/* Footer / Tenant pill */}
-      <div className="border-t border-slate-800/80 p-3">
+      <div className="border-t border-slate-200 p-3 bg-slate-50/50">
         {!isCollapsed ? (
-          <div className="flex items-center gap-2 rounded-lg bg-slate-900/80 border border-slate-800/80 px-2.5 py-2 text-[11px] text-slate-400">
+          <div className="flex items-center gap-2 rounded-lg bg-white border border-slate-200/80 px-2.5 py-2 text-[11px] text-slate-600 shadow-xs">
             <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
             <span className="truncate text-left font-mono">Tenant Active</span>
           </div>

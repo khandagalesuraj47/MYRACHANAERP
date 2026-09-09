@@ -26,7 +26,7 @@ export function AdminLayout({
   const [isMobileOpen, setIsMobileOpen] = useState(false)
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-slate-950 font-sans antialiased text-slate-100">
+    <div className="flex h-screen w-screen overflow-hidden bg-slate-50 font-sans antialiased text-slate-900">
       {/* Desktop Persistent Sidebar */}
       <div className="hidden md:flex h-full">
         <AdminSidebar
@@ -42,10 +42,10 @@ export function AdminLayout({
       {isMobileOpen && (
         <div className="fixed inset-0 z-50 flex md:hidden">
           <div
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm"
+            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm"
             onClick={() => setIsMobileOpen(false)}
           />
-          <div className="relative flex w-64 max-w-[80vw] flex-col bg-slate-950 shadow-2xl z-50">
+          <div className="relative flex w-64 max-w-[80vw] flex-col bg-white shadow-2xl z-50">
             <AdminSidebar
               organizationName={organization.name}
               isCollapsed={false}
