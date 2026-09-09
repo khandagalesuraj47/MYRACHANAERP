@@ -230,44 +230,58 @@ export class PeopleRepository {
   }
 
   /**
-   * Fetch all operational task types
+   * Fetch operational task types - strictly limited to the 4 core ERP tasks:
+   * 1. Item Master
+   * 2. Asset Master
+   * 3. Vendor Master
+   * 4. Diesel Requisition
    */
   static async getTaskTypes(organizationId: string): Promise<TaskType[]> {
+    const ALLOWED_CORE_TASKS = ['ITEM_MASTER', 'ASSET_MASTER', 'VENDOR_MASTER', 'DIESEL_REQUISITION']
+    const defaultFourTasks: TaskType[] = [
+      { id: 'tt-item-master', organizationId, code: 'ITEM_MASTER', name: 'Item Master', module: 'INVENTORY', defaultPriority: 'MEDIUM', slaHours: 24, requiresApproval: false, isActive: true, icon: 'Package' },
+      { id: 'tt-asset-master', organizationId, code: 'ASSET_MASTER', name: 'Asset Master', module: 'FLEET', defaultPriority: 'MEDIUM', slaHours: 24, requiresApproval: false, isActive: true, icon: 'Wrench' },
+      { id: 'tt-vendor-master', organizationId, code: 'VENDOR_MASTER', name: 'Vendor Master', module: 'PROCUREMENT', defaultPriority: 'MEDIUM', slaHours: 24, requiresApproval: false, isActive: true, icon: 'Briefcase' },
+      { id: 'tt-diesel-req', organizationId, code: 'DIESEL_REQUISITION', name: 'Diesel Requisition', module: 'FUEL', defaultPriority: 'HIGH', slaHours: 12, requiresApproval: true, isActive: true, icon: 'Fuel' },
+    ]
+
     try {
       const { data, error } = await supabase
         .from('task_types')
         .select('*')
         .eq('organization_id', organizationId)
-        .order('module', { ascending: true })
+        .eq('is_active', true)
+        .order('name', { ascending: true })
 
       if (error || !data || data.length === 0) {
-        return [
-          { id: 'tt-fuel-issue', organizationId, code: 'DIESEL_ISSUE', name: 'Diesel Issue Log', module: 'FUEL', defaultPriority: 'HIGH', slaHours: 4, requiresApproval: false, isActive: true, icon: 'Fuel' },
-          { id: 'tt-fuel-purchase', organizationId, code: 'DIESEL_PURCHASE', name: 'Diesel Bulk Purchase', module: 'FUEL', defaultPriority: 'HIGH', slaHours: 12, requiresApproval: true, isActive: true, icon: 'Truck' },
-          { id: 'tt-mat-issue', organizationId, code: 'MATERIAL_ISSUE', name: 'Material Issue Slip', module: 'INVENTORY', defaultPriority: 'MEDIUM', slaHours: 8, requiresApproval: false, isActive: true, icon: 'Package' },
-          { id: 'tt-mat-receipt', organizationId, code: 'MATERIAL_RECEIPT', name: 'Material Receipt / GRN', module: 'INVENTORY', defaultPriority: 'HIGH', slaHours: 12, requiresApproval: true, isActive: true, icon: 'Boxes' },
-          { id: 'tt-po-req', organizationId, code: 'PURCHASE_REQUEST', name: 'Purchase Indent / Request', module: 'PROCUREMENT', defaultPriority: 'HIGH', slaHours: 24, requiresApproval: true, isActive: true, icon: 'ShoppingCart' },
-          { id: 'tt-maint-req', organizationId, code: 'MAINTENANCE_REQUEST', name: 'Equipment Breakdown / Service', module: 'FLEET', defaultPriority: 'CRITICAL', slaHours: 4, requiresApproval: true, isActive: true, icon: 'Wrench' },
-          { id: 'tt-veh-assign', organizationId, code: 'VEHICLE_ASSIGNMENT', name: 'Vehicle / Machine Allocation', module: 'FLEET', defaultPriority: 'MEDIUM', slaHours: 12, requiresApproval: false, isActive: true, icon: 'Cpu' },
-        ]
+        return defaultFourTasks
       }
 
-      return data.map((t) => ({
-        id: t.id,
-        organizationId: t.organization_id,
-        code: t.code,
-        name: t.name,
-        module: t.module,
-        icon: t.icon,
-        description: t.description,
-        defaultPriority: t.default_priority,
-        slaHours: t.sla_hours,
-        requiresApproval: t.requires_approval,
-        isActive: t.is_active,
-      }))
+      // Filter only the 4 allowed core tasks
+      const filtered = data
+        .filter((t) => ALLOWED_CORE_TASKS.includes(t.code))
+        .map((t) => ({
+          id: t.id,
+          organizationId: t.organization_id,
+          code: t.code,
+          name: t.code === 'ITEM_MASTER' ? 'Item Master' : t.name,
+          module: t.module,
+          icon: t.icon,
+          description: t.description,
+          defaultPriority: t.default_priority,
+          slaHours: t.sla_hours,
+          requiresApproval: t.requires_approval,
+          isActive: t.is_active,
+        }))
+
+      // Merge any of the 4 core tasks that might not yet be in the remote DB table
+      const existingCodes = new Set(filtered.map((f) => f.code))
+      const missingTasks = defaultFourTasks.filter((t) => !existingCodes.has(t.code))
+
+      return [...filtered, ...missingTasks]
     } catch (err) {
       console.warn('[PeopleRepository] getTaskTypes fallback:', err)
-      return []
+      return defaultFourTasks
     }
   }
 
@@ -693,7 +707,7 @@ export class PeopleRepository {
               task_type_id: taskTypeId,
               can_initiate: true,
               can_execute: true,
-              can_approve: false,
+              can_approve: true,
             },
             { onConflict: 'organization_id,user_id,task_type_id' }
           )

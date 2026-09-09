@@ -148,6 +148,12 @@ export function TaskMatrixView({
     }
   }
 
+  // Filter to strictly the 4 Core Tasks
+  const coreTasks = useMemo(() => {
+    const allowed = ['ITEM_MASTER', 'ASSET_MASTER', 'VENDOR_MASTER', 'DIESEL_REQUISITION']
+    return taskTypes.filter((t) => allowed.includes(t.code))
+  }, [taskTypes])
+
   // Sites lookup map for quick name resolution
   const sitesMap = useMemo(() => {
     const map = new Map<string, Site>()
@@ -177,68 +183,65 @@ export function TaskMatrixView({
             </select>
           </div>
 
-          {/* Search Box */}
-          <div className="relative flex-1 sm:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500" />
+          {/* Search Input */}
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-slate-500" />
             <input
               type="text"
+              placeholder="Search personnel by name or email..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search employee (e.g. Shubham)..."
-              className="w-full rounded-lg border border-slate-700 bg-slate-950 pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
+              className="rounded-lg border border-slate-700 bg-slate-950 pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors w-60"
             />
           </div>
         </div>
 
-        {/* Real-time Notice / Stats */}
-        <div className="flex items-center gap-3">
-          {statusNotice ? (
-            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950/80 border border-emerald-800/80 text-emerald-300 font-mono text-[11px] animate-in fade-in">
-              <Sparkles className="h-3 w-3 text-emerald-400" />
+        {/* Live Status Notice Toast */}
+        <div className="flex items-center gap-2 text-xs">
+          {statusNotice && (
+            <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-blue-950 border border-blue-800 text-blue-300 font-mono text-[11px] animate-in fade-in duration-200">
+              <Sparkles className="h-3.5 w-3.5 text-blue-400 shrink-0" />
               <span>{statusNotice}</span>
             </div>
-          ) : (
-            <div className="text-[11px] font-mono text-slate-400 flex items-center gap-3">
-              <span>Employees: <strong className="text-white">{filteredMembers.length}</strong></span>
-              <span>•</span>
-              <span>Tasks: <strong className="text-white">{taskTypes.length}</strong></span>
-            </div>
           )}
+          <span className="font-mono text-[11px] text-slate-400 bg-slate-950 px-2 py-1 rounded border border-slate-800">
+            {filteredMembers.length} Staff • {coreTasks.length} Core Tasks
+          </span>
         </div>
       </div>
 
-      {/* TBAC Matrix Table Container */}
-      <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950 shadow-xl">
-        <table className="w-full border-collapse text-left text-xs">
-          {/* Table Header: Employee + Dynamic Task Type Columns */}
-          <thead>
-            <tr className="border-b border-slate-800 bg-slate-900/90 sticky top-0 z-20">
-              <th className="p-3.5 font-mono text-[11px] font-bold text-slate-300 uppercase tracking-wider min-w-[240px] sticky left-0 z-30 bg-slate-900/95 backdrop-blur border-r border-slate-800">
-                Employee / Operating Site
-              </th>
-              {taskTypes.map((task) => {
-                const IconComp = getTaskIcon(task.icon, task.module)
-                return (
-                  <th
-                    key={task.id}
-                    className="p-3 font-mono text-[11px] font-semibold text-slate-300 text-center min-w-[130px] border-r border-slate-800/80 last:border-r-0 hover:bg-slate-800/40 transition-colors"
-                  >
-                    <div className="flex flex-col items-center gap-1">
-                      <div className="p-1 rounded bg-slate-800 border border-slate-700 text-blue-400">
-                        <IconComp className="h-3.5 w-3.5" />
+      {/* High-Density TBAC Responsibility Matrix Table */}
+      <div className="rounded-xl border border-slate-800 bg-slate-950 shadow-2xl overflow-hidden">
+        <div className="overflow-x-auto max-h-[600px] scrollbar-thin scrollbar-thumb-slate-800">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-slate-800 bg-slate-900/90 sticky top-0 z-20">
+                <th className="p-3.5 font-mono text-[11px] font-bold text-slate-300 uppercase tracking-wider min-w-[240px] sticky left-0 z-30 bg-slate-900/95 backdrop-blur border-r border-slate-800">
+                  Employee / Operating Site
+                </th>
+                {coreTasks.map((task) => {
+                  const IconComp = getTaskIcon(task.icon, task.module)
+                  return (
+                    <th
+                      key={task.id}
+                      className="p-3 font-mono text-[11px] font-semibold text-slate-300 text-center min-w-[130px] border-r border-slate-800/80 last:border-r-0 hover:bg-slate-800/40 transition-colors"
+                    >
+                      <div className="flex flex-col items-center gap-1">
+                        <div className="p-1 rounded bg-slate-800 border border-slate-700 text-blue-400">
+                          <IconComp className="h-3.5 w-3.5" />
+                        </div>
+                        <span className="text-[11px] font-bold text-white tracking-tight">
+                          {task.name}
+                        </span>
+                        <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-slate-800/80 text-slate-400 uppercase">
+                          {task.module}
+                        </span>
                       </div>
-                      <span className="text-[11px] font-bold text-white tracking-tight">
-                        {task.name}
-                      </span>
-                      <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-slate-800/80 text-slate-400 uppercase">
-                        {task.module}
-                      </span>
-                    </div>
-                  </th>
-                )
-              })}
-            </tr>
-          </thead>
+                    </th>
+                  )
+                })}
+              </tr>
+            </thead>
 
           {/* Table Body: Employees with Interactive Matrix Checkbox Cells */}
           <tbody className="divide-y divide-slate-800/60">
@@ -290,7 +293,7 @@ export function TaskMatrixView({
                     </td>
 
                     {/* Dynamic Task Checkbox Cells */}
-                    {taskTypes.map((task) => {
+                    {coreTasks.map((task) => {
                       const key = `${member.userId}::${task.id}`
                       const isAssigned = isTaskAssigned(member.userId, task.id)
                       const isUpdating = updatingKey === key
@@ -338,6 +341,7 @@ export function TaskMatrixView({
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* Legend & Instructions */}

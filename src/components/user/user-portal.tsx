@@ -15,7 +15,10 @@ export function UserPortal({ context }: UserPortalProps) {
   const [isLiveConnected, setIsLiveConnected] = useState(false)
 
   // Derived tasks: use live real-time override if received, otherwise context tasks
-  const assignedTasks = liveTasksOverride ?? context.assignedTasks ?? []
+  const ALLOWED_CORE_TASKS = ['ITEM_MASTER', 'ASSET_MASTER', 'VENDOR_MASTER', 'DIESEL_REQUISITION']
+  const assignedTasks = (liveTasksOverride ?? context.assignedTasks ?? []).filter(
+    (t) => !t.code || ALLOWED_CORE_TASKS.includes(t.code)
+  )
 
   // Real-time Supabase subscription on user_task_assignments
   useEffect(() => {

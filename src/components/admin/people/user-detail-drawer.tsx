@@ -89,7 +89,7 @@ export function UserDetailDrawer({
         icon: task.icon,
         canInitiate: true,
         canExecute: true,
-        canApprove: false,
+        canApprove: true,
       })
     }
     setSelectedTasks(map)

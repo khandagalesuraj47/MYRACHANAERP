@@ -28,11 +28,15 @@ import { CreateUserModal } from './create-user-modal'
 import { TaskMatrixView } from './task-matrix-view'
 import { ApprovalModal } from './approval-modal'
 import { IssueTempPasswordModal } from './issue-temp-password-modal'
+import { PendingApprovalsView } from './pending-approvals-view'
+import { TempPassRequestsView } from './temp-pass-requests-view'
 
 interface PeopleDirectoryProps {
   organizationId: string
   organizationName: string
 }
+
+type PeopleViewMode = 'DIRECTORY' | 'APPROVALS' | 'TEMP_PASS' | 'MATRIX'
 
 export function PeopleDirectory({ organizationId, organizationName }: PeopleDirectoryProps) {
   const [members, setMembers] = useState<EnhancedMember[]>([])
@@ -52,10 +56,11 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
   // Selected member for detail drawer
   const [selectedMember, setSelectedMember] = useState<EnhancedMember | null>(null)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
-  const [viewMode, setViewMode] = useState<'DIRECTORY' | 'MATRIX'>('DIRECTORY')
+  const [viewMode, setViewMode] = useState<PeopleViewMode>('DIRECTORY')
   const [approvingMember, setApprovingMember] = useState<EnhancedMember | null>(null)
   const [issuingRequest, setIssuingRequest] = useState<PasswordResetRequest | null>(null)
   const [issuingTargetUser, setIssuingTargetUser] = useState<{ userId: string; email: string; name?: string } | null>(null)
+
 
 
   const loadData = useCallback(async () => {
@@ -184,8 +189,8 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
         </div>
       )}
 
-      {/* Pending Approvals Queue Banner */}
-      {members.some((m) => !m.isActive) && (
+      {/* Pending Approvals Quick Alert (shown when in Directory view) */}
+      {viewMode === 'DIRECTORY' && members.some((m) => !m.isActive) && (
         <div className="p-4 rounded-xl bg-amber-950/40 border border-amber-800/80 text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs animate-in fade-in">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-amber-900/60 text-amber-400 shrink-0">
@@ -207,20 +212,17 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
           </div>
           <button
             type="button"
-            onClick={() => {
-              const pending = members.find((m) => !m.isActive)
-              if (pending) setApprovingMember(pending)
-            }}
+            onClick={() => setViewMode('APPROVALS')}
             className="flex items-center gap-1.5 self-start sm:self-auto rounded-lg bg-emerald-600 hover:bg-emerald-500 px-3.5 py-2 text-xs font-bold text-white transition-colors cursor-pointer shadow-md shadow-emerald-600/20 shrink-0"
           >
             <ShieldCheck className="h-4 w-4" />
-            <span>Review & Authorize ({members.filter((m) => !m.isActive).length})</span>
+            <span>Open Approvals Tab ({members.filter((m) => !m.isActive).length})</span>
           </button>
         </div>
       )}
 
-      {/* Pending Temporary Password Requests Banner */}
-      {passwordRequests.length > 0 && (
+      {/* Pending Temporary Password Requests Quick Alert (shown when in Directory view) */}
+      {viewMode === 'DIRECTORY' && passwordRequests.length > 0 && (
         <div className="p-4 rounded-xl bg-purple-950/40 border border-purple-800/80 text-purple-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs animate-in fade-in">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-purple-900/60 text-purple-400 shrink-0">
@@ -240,26 +242,21 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
               </p>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {passwordRequests.map((req) => (
-              <button
-                key={req.id}
-                type="button"
-                onClick={() => setIssuingRequest(req)}
-                className="flex items-center gap-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 px-3 py-1.5 text-xs font-bold text-white transition-colors cursor-pointer shadow-md shadow-purple-600/20 shrink-0"
-              >
-                <KeyRound className="h-3.5 w-3.5" />
-                <span>Issue for {req.email}</span>
-              </button>
-            ))}
-          </div>
+          <button
+            type="button"
+            onClick={() => setViewMode('TEMP_PASS')}
+            className="flex items-center gap-1.5 self-start sm:self-auto rounded-lg bg-purple-600 hover:bg-purple-500 px-3.5 py-2 text-xs font-bold text-white transition-colors cursor-pointer shadow-md shadow-purple-600/20 shrink-0"
+          >
+            <KeyRound className="h-3.5 w-3.5" />
+            <span>Open Temp Pass Tab ({passwordRequests.length})</span>
+          </button>
         </div>
       )}
 
-
-      {/* View Mode Switcher (Directory List vs Task Matrix Grid) */}
-      <div className="flex items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
-        <div className="flex items-center gap-2 bg-slate-900/80 border border-slate-800 p-1 rounded-xl">
+      {/* View Mode Switcher (4 Distinct Tabs) */}
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
+        <div className="flex flex-wrap items-center gap-1.5 bg-slate-900/90 border border-slate-800 p-1.5 rounded-xl">
+          {/* Tab 1: Personnel Directory */}
           <button
             type="button"
             onClick={() => setViewMode('DIRECTORY')}
@@ -271,7 +268,62 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
           >
             <Users className="h-3.5 w-3.5" />
             <span>Personnel Directory</span>
+            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-800 text-slate-300">
+              {members.filter((m) => m.isActive).length}
+            </span>
           </button>
+
+          {/* Tab 2: Pending Approvals */}
+          <button
+            type="button"
+            onClick={() => setViewMode('APPROVALS')}
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+              viewMode === 'APPROVALS'
+                ? 'bg-amber-600 text-white shadow-sm'
+                : members.some((m) => !m.isActive)
+                ? 'text-amber-400 hover:bg-amber-950/40 border border-amber-800/50'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+            }`}
+          >
+            <ShieldCheck className="h-3.5 w-3.5" />
+            <span>Pending Approvals</span>
+            <span
+              className={`text-[10px] font-mono px-1.5 py-0.2 rounded font-bold ${
+                members.some((m) => !m.isActive)
+                  ? 'bg-amber-950 text-amber-300 border border-amber-700'
+                  : 'bg-slate-800 text-slate-400'
+              }`}
+            >
+              {members.filter((m) => !m.isActive).length}
+            </span>
+          </button>
+
+          {/* Tab 3: Temp Pass Requests */}
+          <button
+            type="button"
+            onClick={() => setViewMode('TEMP_PASS')}
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+              viewMode === 'TEMP_PASS'
+                ? 'bg-purple-600 text-white shadow-sm'
+                : passwordRequests.length > 0
+                ? 'text-purple-400 hover:bg-purple-950/40 border border-purple-800/50'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+            }`}
+          >
+            <KeyRound className="h-3.5 w-3.5" />
+            <span>Temp Pass Requests</span>
+            <span
+              className={`text-[10px] font-mono px-1.5 py-0.2 rounded font-bold ${
+                passwordRequests.length > 0
+                  ? 'bg-purple-950 text-purple-300 border border-purple-700'
+                  : 'bg-slate-800 text-slate-400'
+              }`}
+            >
+              {passwordRequests.length}
+            </span>
+          </button>
+
+          {/* Tab 4: Task Matrix (TBAC Grid) */}
           <button
             type="button"
             onClick={() => setViewMode('MATRIX')}
@@ -284,7 +336,7 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
             <Layers className="h-3.5 w-3.5" />
             <span>Task Matrix (TBAC Grid)</span>
             <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-emerald-950 border border-emerald-800 text-emerald-400">
-              Site-Wise
+              4 Core Tasks
             </span>
           </button>
         </div>
@@ -294,7 +346,21 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
         </div>
       </div>
 
-      {viewMode === 'MATRIX' ? (
+      {viewMode === 'APPROVALS' ? (
+        <PendingApprovalsView
+          pendingMembers={members.filter((m) => !m.isActive)}
+          onAuthorize={(member) => setApprovingMember(member)}
+          onRefresh={loadData}
+        />
+      ) : viewMode === 'TEMP_PASS' ? (
+        <TempPassRequestsView
+          requests={passwordRequests}
+          members={members}
+          onIssueRequest={(req) => setIssuingRequest(req)}
+          onDirectIssue={(u) => setIssuingTargetUser(u)}
+          onRefresh={loadData}
+        />
+      ) : viewMode === 'MATRIX' ? (
         <TaskMatrixView
           organizationId={organizationId}
           members={members}
