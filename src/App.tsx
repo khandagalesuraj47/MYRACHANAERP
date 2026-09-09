@@ -80,11 +80,12 @@ function EnterpriseLanding() {
           </div>
 
           <h1 className="text-2xl font-extrabold text-white tracking-tight">
-            Rachana Construction & Infrastructure
+            Rachana Construction Limited
           </h1>
           <p className="text-xs text-slate-400 font-mono">
-            Infrastructure & Heavy Civil Engineering ERP Platform
+            Heavy Civil Engineering ERP Platform
           </p>
+
         </div>
 
         {/* Auth status panel */}
