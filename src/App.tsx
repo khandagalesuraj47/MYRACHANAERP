@@ -39,16 +39,29 @@ function NoOrganizationAccessScreen({
   }
 
   const isError = status === 'ERROR'
+  const isPending = status === 'USER_INACTIVE'
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-6 font-sans antialiased select-none">
-      <div className="w-full max-w-md rounded-2xl border border-rose-900/40 bg-slate-900/90 p-8 shadow-2xl space-y-6 text-left">
+      <div className={`w-full max-w-md rounded-2xl border p-8 shadow-2xl space-y-6 text-left ${
+        isPending
+          ? 'border-amber-700/50 bg-slate-900/90'
+          : isError
+          ? 'border-rose-900/40 bg-slate-900/90'
+          : 'border-slate-800 bg-slate-900/90'
+      }`}>
         <div className="space-y-2">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-rose-950/80 border border-rose-800/80 text-rose-400 font-mono text-xs font-bold uppercase tracking-wider">
-            {isError ? 'Verification Error' : 'Access Restricted'}
+          <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded font-mono text-xs font-bold uppercase tracking-wider ${
+            isPending
+              ? 'bg-amber-950/80 border border-amber-800/80 text-amber-400'
+              : isError
+              ? 'bg-rose-950/80 border border-rose-800/80 text-rose-400'
+              : 'bg-slate-800 border border-slate-700 text-slate-300'
+          }`}>
+            {isPending ? 'Pending Admin Approval' : isError ? 'Verification Error' : 'Access Restricted'}
           </div>
           <h1 className="text-xl font-bold text-white tracking-tight">
-            {isError ? 'Database Query Error' : 'Organization Membership Required'}
+            {isPending ? 'Approval & Site Lock Required' : isError ? 'Database Query Error' : 'Organization Membership Required'}
           </h1>
           <p className="text-xs text-slate-300 leading-relaxed font-sans">
             {message}
@@ -56,9 +69,16 @@ function NoOrganizationAccessScreen({
         </div>
 
         <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs font-mono text-slate-400 space-y-1">
-          <div>Status: <span className="text-rose-400 font-semibold">{isError ? 'Database Error' : 'Unassigned / Inactive'}</span></div>
+          <div>
+            Status:{' '}
+            <span className={isPending ? 'text-amber-400 font-semibold' : 'text-rose-400 font-semibold'}>
+              {isPending ? 'Pending Admin Authorization' : isError ? 'Database Error' : 'Unassigned / Inactive'}
+            </span>
+          </div>
           <div className="text-[11px] text-slate-500">
-            {isError
+            {isPending
+              ? 'Your account request has been submitted to your company administrator. Once they authorize your account and assign your operating site, you can sign in directly.'
+              : isError
               ? 'A PostgreSQL / RLS verification error occurred. Check browser console diagnostics or verify database policies.'
               : 'To gain access to your company workspace, please contact your organization system administrator to assign you an active role.'}
           </div>

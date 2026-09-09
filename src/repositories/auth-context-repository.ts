@@ -224,12 +224,12 @@ export class AuthContextRepository {
         }
       }
 
-      // Step B: Fetch active membership in organization_members
+      // Step B: Fetch membership in organization_members
       const { data: memberData, error: memberError } = await supabase
         .from('organization_members')
         .select('id, organization_id, user_id, role, site_id, is_active, created_at, updated_at')
         .eq('user_id', userId)
-        .eq('is_active', true)
+        .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle()
 
@@ -249,7 +249,7 @@ export class AuthContextRepository {
       }
 
       if (!memberData) {
-        console.warn('[AuthDiagnostic] No active organization membership row found for user ID:', userId)
+        console.warn('[AuthDiagnostic] No organization membership row found for user ID:', userId)
         return {
           status: 'NO_MEMBERSHIP',
           userId,
@@ -258,6 +258,20 @@ export class AuthContextRepository {
           permissions: [],
           assignedTasks: [],
           errorMessage: 'Your account is not assigned to an active organization. Please contact your administrator.',
+        }
+      }
+
+      // Check if user is pending administrator approval or inactive
+      if (memberData.is_active === false) {
+        console.warn('[AuthDiagnostic] User account is pending administrator approval:', userId)
+        return {
+          status: 'USER_INACTIVE',
+          userId,
+          email,
+          profile,
+          permissions: [],
+          assignedTasks: [],
+          errorMessage: 'Your registration is currently pending Administrator approval and site assignment. Please contact your company administrator.',
         }
       }
 

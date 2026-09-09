@@ -1,8 +1,9 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Building2, User, LogOut, CheckCircle2 } from 'lucide-react'
+import { Building2, User, LogOut, CheckCircle2, Radio } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import type { UserContextResult } from '../../repositories/auth-context-repository'
+import type { UserTaskAssignment } from '../../types/rbac'
 
 interface UserPortalProps {
   context: UserContextResult
@@ -10,6 +11,77 @@ interface UserPortalProps {
 
 export function UserPortal({ context }: UserPortalProps) {
   const navigate = useNavigate()
+  const [liveTasksOverride, setLiveTasksOverride] = useState<UserTaskAssignment[] | null>(null)
+  const [isLiveConnected, setIsLiveConnected] = useState(false)
+
+  // Derived tasks: use live real-time override if received, otherwise context tasks
+  const assignedTasks = liveTasksOverride ?? context.assignedTasks ?? []
+
+  // Real-time Supabase subscription on user_task_assignments
+  useEffect(() => {
+    if (!context.userId) return
+
+    const channelName = `user-tasks-live-${context.userId}`
+    const channel = supabase
+      .channel(channelName)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_task_assignments',
+          filter: `user_id=eq.${context.userId}`,
+        },
+        async () => {
+          try {
+            const { data, error } = await supabase
+              .from('user_task_assignments')
+              .select(`
+                task_type_id,
+                can_initiate,
+                can_execute,
+                can_approve,
+                task_types (
+                  id,
+                  code,
+                  name,
+                  module,
+                  icon
+                )
+              `)
+              .eq('user_id', context.userId)
+
+            if (!error && data) {
+              const freshTasks: UserTaskAssignment[] = data.map((item: any) => {
+                const tt = Array.isArray(item.task_types) ? item.task_types[0] : item.task_types
+                return {
+                  taskTypeId: item.task_type_id,
+                  code: tt?.code || '',
+                  name: tt?.name || 'Task',
+                  module: tt?.module || 'OPERATIONS',
+                  icon: tt?.icon || null,
+                  canInitiate: item.can_initiate,
+                  canExecute: item.can_execute,
+                  canApprove: item.can_approve,
+                }
+              })
+              setLiveTasksOverride(freshTasks)
+            }
+          } catch (err) {
+            console.error('[UserPortal] Realtime tasks sync error:', err)
+          }
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          setIsLiveConnected(true)
+        }
+      })
+
+    return () => {
+      channel.unsubscribe()
+    }
+  }, [context.userId])
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -100,20 +172,28 @@ export function UserPortal({ context }: UserPortalProps) {
           {/* TBAC: My Operational Responsibilities */}
           <div className="space-y-3 pt-2">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-mono font-semibold uppercase tracking-wider text-emerald-400">
-                My Operational Tasks (TBAC)
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-xs font-mono font-semibold uppercase tracking-wider text-emerald-400">
+                  My Operational Tasks (TBAC)
+                </h3>
+                {isLiveConnected && (
+                  <span className="inline-flex items-center gap-1 font-mono text-[9px] text-emerald-400 bg-emerald-950/80 border border-emerald-800 px-1.5 py-0.2 rounded-full">
+                    <Radio className="h-2.5 w-2.5 animate-pulse" />
+                    LIVE SYNC
+                  </span>
+                )}
+              </div>
               <span className="text-[11px] font-mono text-slate-400">
-                {context.assignedTasks?.length || 0} active
+                {assignedTasks.length} active
               </span>
             </div>
 
-            {context.assignedTasks && context.assignedTasks.length > 0 ? (
+            {assignedTasks && assignedTasks.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                {context.assignedTasks.map((task) => (
+                {assignedTasks.map((task) => (
                   <div
                     key={task.taskTypeId || task.code}
-                    className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/80 hover:border-blue-500/50 hover:bg-slate-900/60 transition-all space-y-1.5"
+                    className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/80 hover:border-blue-500/50 hover:bg-slate-900/60 transition-all space-y-1.5 animate-in fade-in"
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-semibold text-xs text-white truncate">

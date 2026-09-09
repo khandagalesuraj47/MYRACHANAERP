@@ -10,6 +10,9 @@ import {
   RefreshCw,
   AlertCircle,
   UserPlus,
+  Layers,
+  ShieldCheck,
+  Clock,
 } from 'lucide-react'
 import type {
   EnhancedMember,
@@ -21,6 +24,8 @@ import type {
 import { PeopleRepository } from '../../../repositories/admin/people-repository'
 import { UserDetailDrawer } from './user-detail-drawer'
 import { CreateUserModal } from './create-user-modal'
+import { TaskMatrixView } from './task-matrix-view'
+import { ApprovalModal } from './approval-modal'
 
 interface PeopleDirectoryProps {
   organizationId: string
@@ -44,6 +49,8 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
   // Selected member for detail drawer
   const [selectedMember, setSelectedMember] = useState<EnhancedMember | null>(null)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [viewMode, setViewMode] = useState<'DIRECTORY' | 'MATRIX'>('DIRECTORY')
+  const [approvingMember, setApprovingMember] = useState<EnhancedMember | null>(null)
 
   const loadData = useCallback(async () => {
     if (!organizationId) return
@@ -194,8 +201,90 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
         </div>
       )}
 
-      {/* Filter and Search Bar */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-slate-900/60 border border-slate-800 p-3.5 rounded-xl">
+      {/* Pending Approvals Queue Banner */}
+      {members.some((m) => !m.isActive) && (
+        <div className="p-4 rounded-xl bg-amber-950/40 border border-amber-800/80 text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs animate-in fade-in">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-amber-900/60 text-amber-400 shrink-0">
+              <Clock className="h-5 w-5" />
+            </div>
+            <div className="text-left space-y-0.5">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-white text-sm">
+                  Pending Self-Registrations ({members.filter((m) => !m.isActive).length})
+                </span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-900 text-amber-300 font-bold uppercase">
+                  Authorization Required
+                </span>
+              </div>
+              <p className="text-[11px] text-amber-300/80">
+                New user accounts have registered and require Administrator approval, strict site assignment, and initial task allocations.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              const pending = members.find((m) => !m.isActive)
+              if (pending) setApprovingMember(pending)
+            }}
+            className="flex items-center gap-1.5 self-start sm:self-auto rounded-lg bg-emerald-600 hover:bg-emerald-500 px-3.5 py-2 text-xs font-bold text-white transition-colors cursor-pointer shadow-md shadow-emerald-600/20 shrink-0"
+          >
+            <ShieldCheck className="h-4 w-4" />
+            <span>Review & Authorize ({members.filter((m) => !m.isActive).length})</span>
+          </button>
+        </div>
+      )}
+
+      {/* View Mode Switcher (Directory List vs Task Matrix Grid) */}
+      <div className="flex items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
+        <div className="flex items-center gap-2 bg-slate-900/80 border border-slate-800 p-1 rounded-xl">
+          <button
+            type="button"
+            onClick={() => setViewMode('DIRECTORY')}
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+              viewMode === 'DIRECTORY'
+                ? 'bg-blue-600 text-white shadow-sm'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+            }`}
+          >
+            <Users className="h-3.5 w-3.5" />
+            <span>Personnel Directory</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode('MATRIX')}
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+              viewMode === 'MATRIX'
+                ? 'bg-blue-600 text-white shadow-sm'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+            }`}
+          >
+            <Layers className="h-3.5 w-3.5" />
+            <span>Task Matrix (TBAC Grid)</span>
+            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-emerald-950 border border-emerald-800 text-emerald-400">
+              Site-Wise
+            </span>
+          </button>
+        </div>
+
+        <div className="hidden sm:flex items-center gap-2 text-xs font-mono text-slate-400">
+          <span>Total Personnel: <strong className="text-white">{members.length}</strong></span>
+        </div>
+      </div>
+
+      {viewMode === 'MATRIX' ? (
+        <TaskMatrixView
+          organizationId={organizationId}
+          members={members}
+          sites={sites}
+          taskTypes={taskTypes}
+          onRefresh={loadData}
+        />
+      ) : (
+        <div className="space-y-4">
+          {/* Filter and Search Bar */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-slate-900/60 border border-slate-800 p-3.5 rounded-xl">
         {/* Search */}
         <div className="relative">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-500" />
@@ -424,14 +513,26 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
 
                       {/* Column 6: Actions */}
                       <td className="px-4 py-3.5 text-right">
-                        <button
-                          type="button"
-                          onClick={() => setSelectedMember(member)}
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900 px-2.5 py-1.5 text-[11px] font-medium text-slate-300 hover:bg-blue-600 hover:text-white hover:border-blue-500 transition-colors cursor-pointer"
-                        >
-                          <Settings2 className="h-3.5 w-3.5" />
-                          <span>Configure</span>
-                        </button>
+                        <div className="flex items-center justify-end gap-2">
+                          {!member.isActive && (
+                            <button
+                              type="button"
+                              onClick={() => setApprovingMember(member)}
+                              className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-700 bg-emerald-950/80 px-2.5 py-1.5 text-[11px] font-bold text-emerald-300 hover:bg-emerald-600 hover:text-white transition-colors cursor-pointer shadow-sm shadow-emerald-700/20"
+                            >
+                              <ShieldCheck className="h-3.5 w-3.5" />
+                              <span>Authorize</span>
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => setSelectedMember(member)}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900 px-2.5 py-1.5 text-[11px] font-medium text-slate-300 hover:bg-blue-600 hover:text-white hover:border-blue-500 transition-colors cursor-pointer"
+                          >
+                            <Settings2 className="h-3.5 w-3.5" />
+                            <span>Configure</span>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   )
@@ -441,6 +542,8 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
           </table>
         </div>
       </div>
+    </div>
+  )}
 
       {/* User Detail & Task Responsibility Drawer */}
       {selectedMember && (
@@ -455,6 +558,25 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
           onClose={() => setSelectedMember(null)}
           onSaveSuccess={() => {
             setSelectedMember(null)
+            loadData()
+          }}
+        />
+      )}
+
+      {/* Approve Pending Registration Modal */}
+      {approvingMember && (
+        <ApprovalModal
+          key={approvingMember.id}
+          isOpen={!!approvingMember}
+          member={approvingMember}
+          organizationId={organizationId}
+          sites={sites}
+          roles={roles}
+          departments={departments}
+          taskTypes={taskTypes}
+          onClose={() => setApprovingMember(null)}
+          onSuccess={() => {
+            setApprovingMember(null)
             loadData()
           }}
         />

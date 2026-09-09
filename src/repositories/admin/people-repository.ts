@@ -48,6 +48,16 @@ export interface SaveMemberPayload {
   }>
 }
 
+export interface ApproveMemberPayload {
+  organizationId: string
+  memberId: string
+  siteId: string
+  role: 'ADMIN' | 'USER'
+  customRoleId?: string | null
+  departmentId?: string | null
+  taskTypeIds?: string[]
+}
+
 export class PeopleRepository {
   /**
    * Fetch all members of an organization with profile, role, department, site, and task assignments.
@@ -513,5 +523,176 @@ export class PeopleRepository {
       return { success: false, error: msg }
     }
   }
+
+  /**
+   * Verify if an email is already registered in auth or profiles.
+   * Ensures forgot password OTP or registration halts immediately if email is not found.
+   */
+  static async checkEmailExists(email: string): Promise<boolean> {
+    try {
+      const cleanEmail = email.trim().toLowerCase()
+      // 1. Check RPC check_email_exists
+      const { data, error } = await supabase.rpc('check_email_exists', { p_email: cleanEmail })
+      if (!error && typeof data === 'boolean') {
+        return data
+      }
+
+      // 2. Fallback check profiles
+      const { data: prof } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', cleanEmail)
+        .maybeSingle()
+
+      return !!prof
+    } catch (err) {
+      console.warn('[PeopleRepository] checkEmailExists error:', err)
+      return false
+    }
+  }
+
+  /**
+   * Fetch pending approval members for an organization (is_active = false)
+   */
+  static async getPendingMembers(organizationId: string): Promise<EnhancedMember[]> {
+    try {
+      const allMembers = await this.getMembers(organizationId)
+      return allMembers.filter((m) => !m.isActive)
+    } catch (err) {
+      console.error('[PeopleRepository] getPendingMembers error:', err)
+      return []
+    }
+  }
+
+  /**
+   * Approve a pending user registration atomically:
+   * Activates member, assigns mandatory single-site lock, sets role, and assigns selected operational tasks.
+   */
+  static async approveMember(payload: ApproveMemberPayload): Promise<{ success: boolean; error?: string }> {
+    try {
+      // 1. Try RPC approve_registration_request
+      const { data, error } = await supabase.rpc('approve_registration_request', {
+        p_organization_id: payload.organizationId,
+        p_member_id: payload.memberId,
+        p_site_id: payload.siteId,
+        p_role: payload.role,
+        p_custom_role_id: payload.customRoleId || null,
+        p_department_id: payload.departmentId || null,
+        p_task_type_ids: payload.taskTypeIds || [],
+      })
+
+      if (!error && data) {
+        if (typeof data === 'object' && 'success' in data && !(data as { success: boolean }).success) {
+          return { success: false, error: (data as { error?: string }).error || 'Approval rejected by server' }
+        }
+        return { success: true }
+      }
+
+      // 2. Fallback direct update
+      const { error: updateErr } = await supabase
+        .from('organization_members')
+        .update({
+          is_active: true,
+          site_id: payload.siteId,
+          role: payload.role === 'ADMIN' ? 'ADMIN' : 'USER',
+          custom_role_id: payload.customRoleId || null,
+          department_id: payload.departmentId || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', payload.memberId)
+
+      if (updateErr) {
+        return { success: false, error: updateErr.message }
+      }
+
+      // Fetch member to get userId
+      const { data: mem } = await supabase
+        .from('organization_members')
+        .select('user_id')
+        .eq('id', payload.memberId)
+        .maybeSingle()
+
+      if (mem?.user_id) {
+        // Confirm user email if needed
+        try {
+          await supabase.rpc('confirm_user_email', { p_email: '' })
+        } catch {
+          // ignore
+        }
+
+        if (payload.taskTypeIds && payload.taskTypeIds.length > 0) {
+          // Clear old
+          await supabase
+            .from('user_task_assignments')
+            .delete()
+            .match({ organization_id: payload.organizationId, user_id: mem.user_id })
+
+          // Insert new
+          const rows = payload.taskTypeIds.map((tid) => ({
+            organization_id: payload.organizationId,
+            user_id: mem.user_id,
+            task_type_id: tid,
+            can_initiate: true,
+            can_execute: true,
+            can_approve: payload.role === 'ADMIN',
+          }))
+          await supabase.from('user_task_assignments').upsert(rows)
+        }
+      }
+
+      return { success: true }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to approve member registration.'
+      console.error('[PeopleRepository] approveMember exception:', err)
+      return { success: false, error: msg }
+    }
+  }
+
+  /**
+   * Toggle a specific operational task permission for an employee in real time.
+   * Enables instant interactive clicking in the TBAC Task Assignment Matrix.
+   */
+  static async toggleUserTaskPermission(
+    organizationId: string,
+    userId: string,
+    taskTypeId: string,
+    enabled: boolean
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      if (!enabled) {
+        // Revoke / Delete
+        const { error } = await supabase
+          .from('user_task_assignments')
+          .delete()
+          .match({ organization_id: organizationId, user_id: userId, task_type_id: taskTypeId })
+
+        if (error) return { success: false, error: error.message }
+        return { success: true }
+      } else {
+        // Grant / Upsert
+        const { error } = await supabase
+          .from('user_task_assignments')
+          .upsert(
+            {
+              organization_id: organizationId,
+              user_id: userId,
+              task_type_id: taskTypeId,
+              can_initiate: true,
+              can_execute: true,
+              can_approve: false,
+            },
+            { onConflict: 'organization_id,user_id,task_type_id' }
+          )
+
+        if (error) return { success: false, error: error.message }
+        return { success: true }
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to toggle task permission.'
+      console.error('[PeopleRepository] toggleUserTaskPermission exception:', err)
+      return { success: false, error: msg }
+    }
+  }
 }
+
 

@@ -13,6 +13,7 @@ import {
   RotateCcw,
 } from 'lucide-react'
 import { supabase, isSupabaseConfigured } from '../../lib/supabase'
+import { PeopleRepository } from '../../repositories/admin/people-repository'
 
 interface SignInPageProps {
   onSuccess?: () => void
@@ -231,24 +232,24 @@ export function SignInPage({ onSuccess, onNavigateHome }: SignInPageProps) {
       }
 
       if (data.user) {
-        // Link to default organization
+        // Link to default organization with is_active = false (Pending Admin Review)
         const { data: orgs } = await supabase.from('organizations').select('id').limit(1)
         if (orgs && orgs.length > 0) {
           await supabase.from('organization_members').insert({
             organization_id: orgs[0].id,
             user_id: data.user.id,
             role: 'USER',
-            is_active: true,
+            is_active: false,
           })
         }
 
-        setSuccessMessage('Account created successfully! Redirecting...')
-        if (data.session && onSuccess) {
-          setTimeout(onSuccess, 1000)
-        } else {
-          setSuccessMessage('Account registered! Please sign in with your credentials.')
+        // Auto sign-out session so unapproved user cannot access immediately
+        await supabase.auth.signOut()
+
+        setSuccessMessage('Registration submitted! Your account is pending Administrator approval and site assignment. Please contact your company administrator.')
+        setTimeout(() => {
           setMode('SIGN_IN')
-        }
+        }, 3500)
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Registration failed.'
@@ -287,6 +288,14 @@ export function SignInPage({ onSuccess, onNavigateHome }: SignInPageProps) {
     setIsLoading(true)
 
     try {
+      // Pre-check: verify email exists in ERP before attempting OTP
+      const emailExists = await PeopleRepository.checkEmailExists(email.trim().toLowerCase())
+      if (!emailExists) {
+        setErrorMessage('This email address is not registered in MY RACHANA ERP. Please verify the email or register an account.')
+        setIsLoading(false)
+        return
+      }
+
       const redirectTo = `${window.location.origin}/reset-password`
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
         redirectTo,
