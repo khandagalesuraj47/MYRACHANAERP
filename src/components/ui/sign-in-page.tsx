@@ -191,15 +191,30 @@ export function SignInPage({ onSuccess, onNavigateHome }: SignInPageProps) {
       }
 
       if (data.user) {
-        // Link to default organization with is_active = false (Pending Admin Review)
-        const { data: orgs } = await supabase.from('organizations').select('id').limit(1)
-        if (orgs && orgs.length > 0) {
-          await supabase.from('organization_members').insert({
-            organization_id: orgs[0].id,
-            user_id: data.user.id,
-            role: 'USER',
-            is_active: false,
+        // 1. Invoke self_register_member RPC to guarantee pending member record in Supabase
+        try {
+          await supabase.rpc('self_register_member', {
+            p_user_id: data.user.id,
+            p_full_name: fullName.trim(),
+            p_email: email.trim().toLowerCase(),
           })
+        } catch (rpcErr) {
+          console.warn('[SignInPage] self_register_member RPC fallback:', rpcErr)
+        }
+
+        // 2. Direct insert fallback if organization ID is known
+        try {
+          const { data: orgs } = await supabase.from('organizations').select('id').limit(1)
+          if (orgs && orgs.length > 0) {
+            await supabase.from('organization_members').insert({
+              organization_id: orgs[0].id,
+              user_id: data.user.id,
+              role: 'USER',
+              is_active: false,
+            })
+          }
+        } catch {
+          // Handled by database trigger on auth.users
         }
 
         // Auto sign-out session so unapproved user cannot access immediately

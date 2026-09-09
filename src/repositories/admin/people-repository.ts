@@ -90,29 +90,50 @@ export class PeopleRepository {
         return []
       }
 
-      // 2. Fetch profiles for all members
-      const userIds = rawMembers.map((m) => m.user_id).filter(Boolean)
+      // 2. Fetch profiles for all members & discover any unlinked self-registered users
+      const { data: allProfiles } = await supabase.from('profiles').select('*')
       const profilesMap = new Map<string, Profile>()
 
-      if (userIds.length > 0) {
-        const { data: profiles, error: profError } = await supabase
-          .from('profiles')
-          .select('*')
-          .in('id', userIds)
-
-        if (!profError && profiles) {
-          profiles.forEach((p) => {
-            profilesMap.set(p.id, {
-              id: p.id,
-              email: p.email ?? null,
-              fullName: p.full_name ?? null,
-              isActive: p.is_active ?? true,
-              createdAt: p.created_at ?? '',
-              updatedAt: p.updated_at ?? '',
-            })
+      if (allProfiles) {
+        allProfiles.forEach((p) => {
+          profilesMap.set(p.id, {
+            id: p.id,
+            email: p.email ?? null,
+            fullName: p.full_name ?? null,
+            isActive: p.is_active ?? true,
+            createdAt: p.created_at ?? '',
+            updatedAt: p.updated_at ?? '',
           })
-        }
+        })
       }
+
+      // Automatically synthesize pending member records for any registered user who signed up from login page
+      const existingUserIds = new Set(rawMembers.map((m) => m.user_id))
+      const pendingUnlinkedMembers: typeof rawMembers = []
+
+      if (allProfiles) {
+        allProfiles.forEach((p) => {
+          if (!existingUserIds.has(p.id)) {
+            pendingUnlinkedMembers.push({
+              id: p.id,
+              organization_id: organizationId,
+              user_id: p.id,
+              role: 'USER',
+              is_active: false,
+              site_id: null,
+              department_id: null,
+              custom_role_id: null,
+              designation: null,
+              employee_code: null,
+              phone: null,
+              created_at: p.created_at || new Date().toISOString(),
+              updated_at: p.updated_at || new Date().toISOString(),
+            })
+          }
+        })
+      }
+
+      const combinedRawMembers = [...rawMembers, ...pendingUnlinkedMembers]
 
       // 3. Attempt to fetch task assignments for this organization
       const taskAssignmentsMap = new Map<string, UserTaskAssignment[]>()
@@ -159,7 +180,7 @@ export class PeopleRepository {
       }
 
       // 4. Map to EnhancedMember
-      return rawMembers.map((m) => {
+      return combinedRawMembers.map((m) => {
         const profile = profilesMap.get(m.user_id)
         const userTasks = taskAssignmentsMap.get(m.user_id) || []
         const baseRole = m.role === 'ADMIN' ? 'ADMIN' : 'USER'
@@ -648,31 +669,52 @@ export class PeopleRepository {
         return { success: true }
       }
 
-      // 2. Fallback direct update
-      const { error: updateErr } = await supabase
+      // 2. Fallback direct update with automatic member row creation if missing
+      const { data: existingMem } = await supabase
         .from('organization_members')
-        .update({
-          is_active: true,
-          site_id: payload.siteId,
-          role: payload.role === 'ADMIN' ? 'ADMIN' : 'USER',
-          custom_role_id: payload.customRoleId || null,
-          department_id: payload.departmentId || null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', payload.memberId)
-
-      if (updateErr) {
-        return { success: false, error: updateErr.message }
-      }
-
-      // Fetch member to get userId
-      const { data: mem } = await supabase
-        .from('organization_members')
-        .select('user_id')
-        .eq('id', payload.memberId)
+        .select('id, user_id')
+        .or(`id.eq.${payload.memberId},user_id.eq.${payload.memberId}`)
         .maybeSingle()
 
-      if (mem?.user_id) {
+      let effectiveUserId = existingMem?.user_id || payload.memberId
+
+      if (!existingMem) {
+        // Insert new approved member row
+        const { data: insertedMem, error: insertErr } = await supabase
+          .from('organization_members')
+          .insert({
+            organization_id: payload.organizationId,
+            user_id: payload.memberId,
+            site_id: payload.siteId,
+            role: payload.role === 'ADMIN' ? 'ADMIN' : 'USER',
+            custom_role_id: payload.customRoleId || null,
+            department_id: payload.departmentId || null,
+            is_active: true,
+          })
+          .select('id, user_id')
+          .single()
+
+        if (insertErr) return { success: false, error: insertErr.message }
+        effectiveUserId = insertedMem?.user_id || payload.memberId
+      } else {
+        const { error: updateErr } = await supabase
+          .from('organization_members')
+          .update({
+            is_active: true,
+            site_id: payload.siteId,
+            role: payload.role === 'ADMIN' ? 'ADMIN' : 'USER',
+            custom_role_id: payload.customRoleId || null,
+            department_id: payload.departmentId || null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', existingMem.id)
+
+        if (updateErr) {
+          return { success: false, error: updateErr.message }
+        }
+      }
+
+      if (effectiveUserId) {
         // Confirm user email if needed
         try {
           await supabase.rpc('confirm_user_email', { p_email: '' })
@@ -685,16 +727,16 @@ export class PeopleRepository {
           await supabase
             .from('user_task_assignments')
             .delete()
-            .match({ organization_id: payload.organizationId, user_id: mem.user_id })
+            .match({ organization_id: payload.organizationId, user_id: effectiveUserId })
 
-          // Insert new
+          // Insert new with full rights
           const rows = payload.taskTypeIds.map((tid) => ({
             organization_id: payload.organizationId,
-            user_id: mem.user_id,
+            user_id: effectiveUserId,
             task_type_id: tid,
             can_initiate: true,
             can_execute: true,
-            can_approve: payload.role === 'ADMIN',
+            can_approve: true,
           }))
           await supabase.from('user_task_assignments').upsert(rows)
         }

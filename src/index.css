@@ -15,15 +15,20 @@
     --erp-text-dim: #64748b;
   }
 
-  body {
+  html, body {
     margin: 0;
     padding: 0;
+    width: 100%;
+    min-height: 100%;
     background-color: #0b0f19;
     color: #e2e8f0;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;
+    -webkit-tap-highlight-color: transparent;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
   /* Custom enterprise dense scrollbars */
