@@ -13,6 +13,7 @@ import {
   Layers,
   ShieldCheck,
   Clock,
+  KeyRound,
 } from 'lucide-react'
 import type {
   EnhancedMember,
@@ -21,11 +22,12 @@ import type {
   Site,
   TaskType,
 } from '../../../types/rbac'
-import { PeopleRepository } from '../../../repositories/admin/people-repository'
+import { PeopleRepository, type PasswordResetRequest } from '../../../repositories/admin/people-repository'
 import { UserDetailDrawer } from './user-detail-drawer'
 import { CreateUserModal } from './create-user-modal'
 import { TaskMatrixView } from './task-matrix-view'
 import { ApprovalModal } from './approval-modal'
+import { IssueTempPasswordModal } from './issue-temp-password-modal'
 
 interface PeopleDirectoryProps {
   organizationId: string
@@ -38,6 +40,7 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
   const [departments, setDepartments] = useState<Department[]>([])
   const [sites, setSites] = useState<Site[]>([])
   const [taskTypes, setTaskTypes] = useState<TaskType[]>([])
+  const [passwordRequests, setPasswordRequests] = useState<PasswordResetRequest[]>([])
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -51,6 +54,9 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [viewMode, setViewMode] = useState<'DIRECTORY' | 'MATRIX'>('DIRECTORY')
   const [approvingMember, setApprovingMember] = useState<EnhancedMember | null>(null)
+  const [issuingRequest, setIssuingRequest] = useState<PasswordResetRequest | null>(null)
+  const [issuingTargetUser, setIssuingTargetUser] = useState<{ userId: string; email: string; name?: string } | null>(null)
+
 
   const loadData = useCallback(async () => {
     if (!organizationId) return
@@ -58,12 +64,13 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
     setError(null)
 
     try {
-      const [membersData, rolesData, deptsData, sitesData, tasksData] = await Promise.all([
+      const [membersData, rolesData, deptsData, sitesData, tasksData, requestsData] = await Promise.all([
         PeopleRepository.getMembers(organizationId),
         PeopleRepository.getRoles(organizationId),
         PeopleRepository.getDepartments(organizationId),
         PeopleRepository.getSites(organizationId),
         PeopleRepository.getTaskTypes(organizationId),
+        PeopleRepository.getPasswordResetRequests(organizationId),
       ])
 
       setMembers(membersData)
@@ -71,6 +78,7 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
       setDepartments(deptsData)
       setSites(sitesData)
       setTaskTypes(tasksData)
+      setPasswordRequests(requestsData.filter((r) => r.status === 'PENDING'))
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to load organization members.'
       console.error('[PeopleDirectory] Error loading data:', err)
@@ -81,36 +89,11 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
   }, [organizationId])
 
   useEffect(() => {
-    let isMounted = true
-
-    if (organizationId) {
-      Promise.all([
-        PeopleRepository.getMembers(organizationId),
-        PeopleRepository.getRoles(organizationId),
-        PeopleRepository.getDepartments(organizationId),
-        PeopleRepository.getSites(organizationId),
-        PeopleRepository.getTaskTypes(organizationId),
-      ]).then(([membersData, rolesData, deptsData, sitesData, tasksData]) => {
-        if (!isMounted) return
-        setMembers(membersData)
-        setRoles(rolesData)
-        setDepartments(deptsData)
-        setSites(sitesData)
-        setTaskTypes(tasksData)
-        setLoading(false)
-      }).catch((err: unknown) => {
-        if (!isMounted) return
-        const msg = err instanceof Error ? err.message : 'Failed to load organization members.'
-        console.error('[PeopleDirectory] Error loading data:', err)
-        setError(msg)
-        setLoading(false)
-      })
-    }
-
-    return () => {
-      isMounted = false
-    }
-  }, [organizationId])
+    if (!organizationId) return
+    queueMicrotask(() => {
+      void loadData()
+    })
+  }, [organizationId, loadData])
 
   const handleToggleStatus = async (member: EnhancedMember) => {
     const nextStatus = !member.isActive
@@ -235,6 +218,44 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
           </button>
         </div>
       )}
+
+      {/* Pending Temporary Password Requests Banner */}
+      {passwordRequests.length > 0 && (
+        <div className="p-4 rounded-xl bg-purple-950/40 border border-purple-800/80 text-purple-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs animate-in fade-in">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-purple-900/60 text-purple-400 shrink-0">
+              <KeyRound className="h-5 w-5" />
+            </div>
+            <div className="text-left space-y-0.5">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-white text-sm">
+                  Pending Temporary Password Requests ({passwordRequests.length})
+                </span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-purple-900 text-purple-300 font-bold uppercase">
+                  Helpline 7770002696
+                </span>
+              </div>
+              <p className="text-[11px] text-purple-300/80">
+                Employees have requested a temporary password. Issue a temporary password to allow them to sign in and set their permanent credentials.
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {passwordRequests.map((req) => (
+              <button
+                key={req.id}
+                type="button"
+                onClick={() => setIssuingRequest(req)}
+                className="flex items-center gap-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 px-3 py-1.5 text-xs font-bold text-white transition-colors cursor-pointer shadow-md shadow-purple-600/20 shrink-0"
+              >
+                <KeyRound className="h-3.5 w-3.5" />
+                <span>Issue for {req.email}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
 
       {/* View Mode Switcher (Directory List vs Task Matrix Grid) */}
       <div className="flex items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
@@ -514,6 +535,45 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
                       {/* Column 6: Actions */}
                       <td className="px-4 py-3.5 text-right">
                         <div className="flex items-center justify-end gap-2">
+                          {/* Check for pending password reset request for this user */}
+                          {(() => {
+                            const pendingReq = passwordRequests.find(
+                              (r) =>
+                                r.userId === member.userId ||
+                                (member.profile?.email &&
+                                  r.email.toLowerCase() === member.profile.email.toLowerCase())
+                            )
+                            if (pendingReq) {
+                              return (
+                                <button
+                                  type="button"
+                                  onClick={() => setIssuingRequest(pendingReq)}
+                                  className="inline-flex items-center gap-1.5 rounded-lg border border-purple-700 bg-purple-950/90 px-2.5 py-1.5 text-[11px] font-bold text-purple-300 hover:bg-purple-600 hover:text-white transition-colors cursor-pointer shadow-sm shadow-purple-700/30"
+                                >
+                                  <KeyRound className="h-3.5 w-3.5" />
+                                  <span>Issue Temp Pass</span>
+                                </button>
+                              )
+                            }
+                            return (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setIssuingTargetUser({
+                                    userId: member.userId,
+                                    email: member.profile?.email || member.userId,
+                                    name: member.profile?.fullName || '',
+                                  })
+                                }
+                                title="Issue / Reset temporary password for this user"
+                                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900 px-2 py-1.5 text-[11px] font-medium text-slate-400 hover:text-purple-300 hover:bg-slate-800 hover:border-purple-800 transition-colors cursor-pointer"
+                              >
+                                <KeyRound className="h-3.5 w-3.5" />
+                                <span className="hidden xl:inline">Temp Pass</span>
+                              </button>
+                            )
+                          })()}
+
                           {!member.isActive && (
                             <button
                               type="button"
@@ -592,6 +652,24 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
           onClose={() => setIsCreateModalOpen(false)}
           onSuccess={() => {
             setIsCreateModalOpen(false)
+            loadData()
+          }}
+        />
+      )}
+
+      {/* Issue Temporary Password Modal */}
+      {(issuingRequest || issuingTargetUser) && (
+        <IssueTempPasswordModal
+          isOpen={!!(issuingRequest || issuingTargetUser)}
+          request={issuingRequest}
+          targetUser={issuingTargetUser}
+          onClose={() => {
+            setIssuingRequest(null)
+            setIssuingTargetUser(null)
+          }}
+          onSuccess={() => {
+            setIssuingRequest(null)
+            setIssuingTargetUser(null)
             loadData()
           }}
         />

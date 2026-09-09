@@ -6,6 +6,7 @@ import { AdminDashboard } from './components/admin/admin-dashboard'
 import { UserPortal } from './components/user/user-portal'
 import { AuthProvider } from './context/auth-provider'
 import { useAuth } from './context/auth-context'
+import { MandatoryPasswordChangeModal } from './components/ui/mandatory-password-change-modal'
 
 function WorkspaceLoadingScreen({ message = 'Loading your workspace...' }: { message?: string }) {
   return (
@@ -217,10 +218,28 @@ function LoginPageWrapper() {
   )
 }
 
+function MandatoryPasswordGuard() {
+  const { context, refreshContext } = useAuth()
+
+  if (!context || !context.mustChangePassword) {
+    return null
+  }
+
+  return (
+    <MandatoryPasswordChangeModal
+      isOpen={true}
+      onSuccess={async () => {
+        await refreshContext()
+      }}
+    />
+  )
+}
+
 export function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <MandatoryPasswordGuard />
         <Routes>
           <Route path="/login" element={<LoginPageWrapper />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
@@ -240,5 +259,6 @@ export function App() {
     </BrowserRouter>
   )
 }
+
 
 export default App

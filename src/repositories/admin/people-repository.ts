@@ -58,6 +58,20 @@ export interface ApproveMemberPayload {
   taskTypeIds?: string[]
 }
 
+export interface PasswordResetRequest {
+  id: string
+  organizationId: string
+  userId: string
+  email: string
+  status: 'PENDING' | 'FULFILLED' | 'REJECTED'
+  tempPassword?: string | null
+  adminNotes?: string | null
+  requestedAt: string
+  fulfilledAt?: string | null
+  fulfilledBy?: string | null
+  userName?: string | null
+}
+
 export class PeopleRepository {
   /**
    * Fetch all members of an organization with profile, role, department, site, and task assignments.
@@ -691,6 +705,199 @@ export class PeopleRepository {
       const msg = err instanceof Error ? err.message : 'Failed to toggle task permission.'
       console.error('[PeopleRepository] toggleUserTaskPermission exception:', err)
       return { success: false, error: msg }
+    }
+  }
+
+  /**
+   * Request Temporary Password for an employee.
+   * Pre-checks email, files a request in password_reset_requests, and returns Admin Helpline: 7770002696
+   */
+  static async requestTempPassword(email: string): Promise<{
+    success: boolean
+    adminPhone?: string
+    message?: string
+    error?: string
+  }> {
+    try {
+      const cleanEmail = email.trim().toLowerCase()
+      // 1. Try RPC request_temp_password
+      const { data, error } = await supabase.rpc('request_temp_password', { p_email: cleanEmail })
+      if (!error && data) {
+        const res = data as { success: boolean; admin_phone?: string; message?: string; error?: string }
+        if (!res.success) {
+          return { success: false, error: res.error || 'Request rejected.' }
+        }
+        return {
+          success: true,
+          adminPhone: res.admin_phone || '7770002696',
+          message: res.message,
+        }
+      }
+
+      // 2. Fallback check if email exists
+      const exists = await this.checkEmailExists(cleanEmail)
+      if (!exists) {
+        return { success: false, error: 'This email is not registered in MY RACHANA ERP.' }
+      }
+
+      // Record in table directly if RPC missing
+      try {
+        const { data: prof } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('email', cleanEmail)
+          .maybeSingle()
+
+        if (prof?.id) {
+          const { data: mem } = await supabase
+            .from('organization_members')
+            .select('organization_id')
+            .eq('user_id', prof.id)
+            .maybeSingle()
+
+          await supabase.from('password_reset_requests').insert({
+            organization_id: mem?.organization_id || null,
+            user_id: prof.id,
+            email: cleanEmail,
+            status: 'PENDING',
+          })
+        }
+      } catch {
+        // continue
+      }
+
+      return {
+        success: true,
+        adminPhone: '7770002696',
+        message: 'Temporary password request registered. Please call Admin at 7770002696.',
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error submitting request.'
+      return { success: false, error: msg }
+    }
+  }
+
+  /**
+   * Fetch password reset requests for an organization
+   */
+  static async getPasswordResetRequests(organizationId: string): Promise<PasswordResetRequest[]> {
+    try {
+      const { data, error } = await supabase
+        .from('password_reset_requests')
+        .select(`
+          id,
+          organization_id,
+          user_id,
+          email,
+          status,
+          temp_password,
+          admin_notes,
+          requested_at,
+          fulfilled_at,
+          fulfilled_by
+        `)
+        .eq('organization_id', organizationId)
+        .order('requested_at', { ascending: false })
+
+      if (error || !data) return []
+
+      return data.map((d) => ({
+        id: d.id,
+        organizationId: d.organization_id,
+        userId: d.user_id,
+        email: d.email,
+        status: d.status,
+        tempPassword: d.temp_password,
+        adminNotes: d.admin_notes,
+        requestedAt: d.requested_at,
+        fulfilledAt: d.fulfilled_at,
+        fulfilledBy: d.fulfilled_by,
+      }))
+    } catch (err) {
+      console.warn('[PeopleRepository] getPasswordResetRequests error:', err)
+      return []
+    }
+  }
+
+  /**
+   * Admin issues a temporary password for a user request.
+   * Hashes temp password, updates auth.users, and sets must_change_password = true.
+   */
+  static async issueTempPassword(
+    requestId: string,
+    tempPassword: string
+  ): Promise<{ success: boolean; tempPassword?: string; error?: string }> {
+    try {
+      const { data, error } = await supabase.rpc('admin_issue_temp_password', {
+        p_request_id: requestId,
+        p_temp_password: tempPassword.trim(),
+      })
+
+      if (error) {
+        return { success: false, error: error.message }
+      }
+
+      const res = data as { success: boolean; temp_password?: string; error?: string }
+      if (!res.success) {
+        return { success: false, error: res.error || 'Failed to issue temp password.' }
+      }
+
+      return { success: true, tempPassword: res.temp_password }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to issue temporary password.'
+      return { success: false, error: msg }
+    }
+  }
+
+  /**
+   * Admin directly resets any user's password to a temporary password,
+   * requiring user to change it on next login.
+   */
+  static async adminResetUserPassword(
+    userId: string,
+    tempPassword: string
+  ): Promise<{ success: boolean; tempPassword?: string; error?: string }> {
+    try {
+      const { data, error } = await supabase.rpc('admin_reset_user_password', {
+        p_user_id: userId,
+        p_temp_password: tempPassword.trim(),
+      })
+
+      if (error) {
+        return { success: false, error: error.message }
+      }
+
+      const res = data as { success: boolean; temp_password?: string; error?: string }
+      if (!res.success) {
+        return { success: false, error: res.error || 'Failed to reset password.' }
+      }
+
+      return { success: true, tempPassword: res.temp_password }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to reset password.'
+      return { success: false, error: msg }
+    }
+  }
+
+  /**
+   * User marks mandatory password change as completed after setting new password
+   */
+  static async completePasswordChange(): Promise<boolean> {
+    try {
+      const { error } = await supabase.rpc('complete_mandatory_password_change')
+      if (!error) return true
+
+      const { data: user } = await supabase.auth.getUser()
+      if (user?.user) {
+        await supabase
+          .from('profiles')
+          .update({ must_change_password: false, updated_at: new Date().toISOString() })
+          .eq('id', user.user.id)
+        return true
+      }
+      return false
+    } catch {
+      return false
     }
   }
 }

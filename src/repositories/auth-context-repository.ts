@@ -20,6 +20,7 @@ export interface UserContextResult {
   role?: string
   baseRole?: UserRole
   assignedSite?: { id: string; name: string; code: string; location?: string }
+  mustChangePassword?: boolean
   permissions?: string[]
   assignedTasks?: UserTaskAssignment[]
   errorMessage?: string
@@ -188,7 +189,7 @@ export class AuthContextRepository {
       // Step A: Fetch profile
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('id, email, full_name, is_active, created_at, updated_at')
+        .select('id, email, full_name, is_active, must_change_password, created_at, updated_at')
         .eq('id', userId)
         .maybeSingle()
 
@@ -200,6 +201,7 @@ export class AuthContextRepository {
             email: profileData.email,
             fullName: profileData.full_name,
             isActive: profileData.is_active,
+            mustChangePassword: profileData.must_change_password ?? false,
             createdAt: profileData.created_at,
             updatedAt: profileData.updated_at,
           }
@@ -433,6 +435,7 @@ export class AuthContextRepository {
         role: rawRole,
         baseRole,
         assignedSite,
+        mustChangePassword: profile.mustChangePassword ?? false,
         permissions: [],
         assignedTasks,
       }

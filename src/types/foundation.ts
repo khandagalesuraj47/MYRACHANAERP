@@ -23,6 +23,7 @@ export interface Profile {
   email: string | null
   fullName: string | null
   isActive: boolean
+  mustChangePassword?: boolean
   createdAt: string
   updatedAt: string
 }
