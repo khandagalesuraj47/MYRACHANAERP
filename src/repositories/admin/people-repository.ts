@@ -443,6 +443,38 @@ export class PeopleRepository {
   }
 
   /**
+   * Permanently delete a member from Supabase (auth.users, profiles, organization_members)
+   */
+  static async deleteMember(
+    organizationId: string,
+    memberId: string
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      const { data, error } = await supabase.rpc('admin_delete_user', {
+        p_organization_id: organizationId,
+        p_member_id: memberId,
+      })
+
+      if (error) {
+        // Fallback: Delete from organization_members directly if RPC is unavailable
+        const { error: delErr } = await supabase
+          .from('organization_members')
+          .delete()
+          .eq('id', memberId)
+
+        if (delErr) return { success: false, error: delErr.message }
+        return { success: true }
+      }
+
+      const res = data as { success: boolean; error?: string }
+      return res
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to delete member.'
+      return { success: false, error: msg }
+    }
+  }
+
+  /**
    * Create a new user with email and password without disrupting the current session.
    * Leverages PostgreSQL SECURITY DEFINER RPC to auto-confirm email and strictly bind site_id.
    */

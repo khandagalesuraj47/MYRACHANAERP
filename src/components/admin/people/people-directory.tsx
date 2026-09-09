@@ -14,6 +14,7 @@ import {
   ShieldCheck,
   Clock,
   KeyRound,
+  Trash2,
 } from 'lucide-react'
 import type {
   EnhancedMember,
@@ -30,6 +31,7 @@ import { ApprovalModal } from './approval-modal'
 import { IssueTempPasswordModal } from './issue-temp-password-modal'
 import { PendingApprovalsView } from './pending-approvals-view'
 import { TempPassRequestsView } from './temp-pass-requests-view'
+import { DeleteMemberModal } from './delete-member-modal'
 
 interface PeopleDirectoryProps {
   organizationId: string
@@ -60,6 +62,7 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
   const [approvingMember, setApprovingMember] = useState<EnhancedMember | null>(null)
   const [issuingRequest, setIssuingRequest] = useState<PasswordResetRequest | null>(null)
   const [issuingTargetUser, setIssuingTargetUser] = useState<{ userId: string; email: string; name?: string } | null>(null)
+  const [deletingMember, setDeletingMember] = useState<EnhancedMember | null>(null)
 
 
 
@@ -658,6 +661,15 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
                             <Settings2 className="h-3.5 w-3.5" />
                             <span>Configure</span>
                           </button>
+                          <button
+                            type="button"
+                            onClick={() => setDeletingMember(member)}
+                            title="Deactivate or Permanently Delete User"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900 px-2 py-1.5 text-[11px] font-medium text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 hover:border-rose-800 transition-colors cursor-pointer"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                            <span className="hidden xl:inline">Delete</span>
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -736,6 +748,21 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
           onSuccess={() => {
             setIssuingRequest(null)
             setIssuingTargetUser(null)
+            loadData()
+          }}
+        />
+      )}
+
+      {/* Delete / Deactivate User Modal */}
+      {deletingMember && (
+        <DeleteMemberModal
+          key={deletingMember.id}
+          isOpen={!!deletingMember}
+          member={deletingMember}
+          organizationId={organizationId}
+          onClose={() => setDeletingMember(null)}
+          onSuccess={() => {
+            setDeletingMember(null)
             loadData()
           }}
         />

@@ -271,8 +271,36 @@ export function SignInPage({ onSuccess, onNavigateHome }: SignInPageProps) {
   }
 
   return (
-    <div className="h-screen w-screen flex flex-col md:flex-row overflow-hidden bg-white text-slate-900 font-sans antialiased">
-      {/* LEFT PANEL - Construction / Infrastructure Imagery Banner */}
+    <div className="min-h-screen w-screen flex flex-col md:flex-row overflow-x-hidden overflow-y-auto bg-white text-slate-900 font-sans antialiased">
+      {/* MOBILE TOP IMAGE BANNER (Shown only on small screens < md) */}
+      <div className="md:hidden w-full h-44 relative overflow-hidden bg-slate-950 shrink-0 select-none">
+        <img
+          src="https://cdn.21st.dev/assets/mirror/0d/0d205a1a31d40e927885b0ec5f603407caa10585b5bc6e8b08240402c7417e86.png"
+          alt="Rachana Construction Operations"
+          className="w-full h-full object-cover opacity-85"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/40 to-slate-950/70" />
+        <div className="absolute top-3 left-4 z-10">
+          <button
+            type="button"
+            onClick={onNavigateHome ? onNavigateHome : () => (window.location.href = '/')}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-black/60 backdrop-blur-md text-white border border-white/20 text-[11px] font-medium cursor-pointer"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Overview</span>
+          </button>
+        </div>
+        <div className="absolute bottom-3 left-4 right-4 z-10 space-y-0.5 text-left">
+          <span className="font-mono text-[9px] font-extrabold tracking-widest text-blue-400 uppercase bg-blue-950/90 px-2 py-0.5 rounded border border-blue-800/80">
+            ENTERPRISE INFRASTRUCTURE
+          </span>
+          <h2 className="text-base font-bold text-white drop-shadow">
+            Rachana Construction Limited
+          </h2>
+        </div>
+      </div>
+
+      {/* LEFT PANEL - Construction / Infrastructure Imagery Banner (Desktop) */}
       <div className="hidden md:flex md:w-1/2 h-full relative overflow-hidden bg-slate-950 select-none">
         <img
           src="https://cdn.21st.dev/assets/mirror/0d/0d205a1a31d40e927885b0ec5f603407caa10585b5bc6e8b08240402c7417e86.png"
@@ -300,7 +328,7 @@ export function SignInPage({ onSuccess, onNavigateHome }: SignInPageProps) {
           <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded bg-blue-500/20 border border-blue-400/30 text-blue-300 text-xs font-mono tracking-wide">
             ENTERPRISE ERP
           </div>
-          <h2 className="text-2xl font-bold tracking-tight text-white drop-shadow-md">
+          <h2 className="text-3xl font-extrabold tracking-tight text-white drop-shadow-md">
             Rachana Construction Limited
           </h2>
           <p className="text-sm text-slate-300 max-w-md leading-relaxed drop-shadow-sm font-light">
@@ -310,14 +338,17 @@ export function SignInPage({ onSuccess, onNavigateHome }: SignInPageProps) {
       </div>
 
       {/* RIGHT PANEL - Authentication & Security Forms */}
-      <div className="w-full md:w-1/2 h-full flex items-center justify-center p-6 sm:p-10 lg:p-14 overflow-y-auto bg-white">
+      <div className="w-full md:w-1/2 min-h-full flex items-center justify-center p-6 sm:p-10 lg:p-14 overflow-y-auto bg-white">
         <div className="w-full max-w-md space-y-6">
-          {/* Header */}
+          {/* Header with Prominent MY RACHANA ERP Title */}
           <div className="space-y-2 text-left">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-mono font-bold tracking-wider uppercase text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded">
-                MYRACHANA ERP
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-mono font-bold tracking-widest uppercase text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded">
+                  OFFICIAL ENTERPRISE CLOUD
+                </span>
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              </div>
 
               {mode !== 'SIGN_IN' && (
                 <button
@@ -331,16 +362,27 @@ export function SignInPage({ onSuccess, onNavigateHome }: SignInPageProps) {
               )}
             </div>
 
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-              {mode === 'SIGN_IN' && 'Welcome Back'}
-              {mode === 'REGISTER' && 'Create ERP Account'}
-              {mode === 'FORGOT_PASSWORD' && 'Password Recovery'}
-            </h1>
-            <p className="text-sm text-slate-500">
-              {mode === 'SIGN_IN' && 'Sign in with your enterprise credentials to access your operating workspace.'}
-              {mode === 'REGISTER' && 'Register your corporate account to join your project site team.'}
-              {mode === 'FORGOT_PASSWORD' && 'Reset your password securely via 5-minute email verification OTP.'}
-            </p>
+            <div className="pt-1">
+              <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-slate-950">
+                MY RACHANA <span className="text-blue-600">ERP</span>
+              </h1>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">
+                Heavy Civil Infrastructure & Fleet Operations Portal
+              </p>
+            </div>
+
+            <div className="pt-2 border-t border-slate-100">
+              <h2 className="text-base font-bold tracking-tight text-slate-900">
+                {mode === 'SIGN_IN' && 'Sign In to Your Account'}
+                {mode === 'REGISTER' && 'Create Your ERP Account'}
+                {mode === 'FORGOT_PASSWORD' && 'Temporary Password Request'}
+              </h2>
+              <p className="text-xs text-slate-500">
+                {mode === 'SIGN_IN' && 'Enter your enterprise credentials to access your operating workspace.'}
+                {mode === 'REGISTER' && 'Register your corporate account for administrator authorization.'}
+                {mode === 'FORGOT_PASSWORD' && 'Verify your work email to log a temporary password request with Administrator.'}
+              </p>
+            </div>
           </div>
 
           {/* Configuration Banner Alert if Supabase unconfigured */}
@@ -616,7 +658,7 @@ export function SignInPage({ onSuccess, onNavigateHome }: SignInPageProps) {
                       Request Temporary Password
                     </h3>
                     <p className="text-xs text-slate-500 leading-relaxed">
-                      Enter your registered work email. Once submitted, call the Administrator at <strong>7770002696</strong> to receive your temporary password.
+                      Enter your registered work email. The system will verify your account and submit a temporary password request to the Administrator.
                     </p>
                   </div>
 
@@ -636,17 +678,6 @@ export function SignInPage({ onSuccess, onNavigateHome }: SignInPageProps) {
                     <p className="text-[11px] text-slate-500">
                       The system strictly verifies that this email exists in Supabase before creating the request.
                     </p>
-                  </div>
-
-                  {/* Admin Helpline Card */}
-                  <div className="p-3.5 rounded-xl border border-blue-200 bg-blue-50/80 text-blue-900 text-xs flex items-start gap-2.5">
-                    <Phone className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
-                    <div className="space-y-1">
-                      <span className="font-bold">Admin Helpline: 7770002696</span>
-                      <p className="text-[11px] text-blue-800 leading-normal">
-                        After submitting, you can call <strong>7770002696</strong> directly to say: <em>"Temporary password dya, request dili ahe"</em>.
-                      </p>
-                    </div>
                   </div>
 
                   <button
@@ -679,7 +710,7 @@ export function SignInPage({ onSuccess, onNavigateHome }: SignInPageProps) {
                 </form>
               ) : (
                 /* fpStep === 'REQUESTED' */
-                <div className="space-y-4">
+                <div className="space-y-4 animate-in fade-in zoom-in-95 duration-500">
                   <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 space-y-1.5">
                     <div className="flex items-center gap-2 text-emerald-700 font-bold text-sm">
                       <CheckCircle2 className="h-5 w-5 shrink-0" />
@@ -690,10 +721,10 @@ export function SignInPage({ onSuccess, onNavigateHome }: SignInPageProps) {
                     </p>
                   </div>
 
-                  {/* Direct Call Administrator Card */}
-                  <div className="p-5 rounded-2xl border border-slate-800 bg-slate-950 text-white space-y-3 text-center shadow-xl">
+                  {/* Direct Call Administrator Card (Revealed only after submission with smooth animation) */}
+                  <div className="p-5 rounded-2xl border border-slate-800 bg-slate-950 text-white space-y-3 text-center shadow-xl animate-in fade-in slide-in-from-bottom-4 zoom-in-95 duration-700">
                     <div className="flex items-center justify-center gap-2">
-                      <Phone className="h-4 w-4 text-emerald-400" />
+                      <Phone className="h-4 w-4 text-emerald-400 animate-bounce" />
                       <span className="font-mono text-xs uppercase tracking-widest text-emerald-400 font-bold">
                         Admin Helpline Number
                       </span>
