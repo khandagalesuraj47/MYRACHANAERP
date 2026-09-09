@@ -23,6 +23,7 @@ import {
 } from '../../../repositories/erp/diesel-requisition-repository'
 import { DieselRequisitionPdfModal } from './diesel-requisition-pdf-modal'
 import { useAuth } from '../../../context/auth-context'
+import { supabase } from '../../../lib/supabase'
 
 interface DieselRequisitionViewProps {
   organizationId: string
@@ -99,24 +100,33 @@ export function DieselRequisitionView({
   }, [organizationId])
 
   useEffect(() => {
-    let isMounted = true
     if (!organizationId) return
+    void loadData()
 
-    Promise.all([
-      DieselRequisitionRepository.getRequisitions(organizationId),
-      DieselRequisitionRepository.getParties(organizationId),
-    ]).then(([reqs, prts]) => {
-      if (isMounted) {
-        setRequisitions(reqs)
-        setParties(prts)
-        setLoading(false)
-      }
-    })
+    // Realtime Supabase Channel for Diesel Requisitions & Parties
+    const channelName = `diesel-requisitions-sync-${organizationId}`
+    const channel = supabase
+      .channel(channelName)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'diesel_requisitions' },
+        () => {
+          void loadData()
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'diesel_parties' },
+        () => {
+          void loadData()
+        }
+      )
+      .subscribe()
 
     return () => {
-      isMounted = false
+      channel.unsubscribe()
     }
-  }, [organizationId])
+  }, [organizationId, loadData])
 
   const notify = (type: 'success' | 'error', message: string) => {
     setFeedback({ type, message })

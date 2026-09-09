@@ -26,7 +26,7 @@ export function AdminLayout({
   const [isMobileOpen, setIsMobileOpen] = useState(false)
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-slate-50 font-sans antialiased text-slate-900">
+    <div className="flex h-[100dvh] w-full max-w-[100vw] overflow-hidden bg-slate-50 font-sans antialiased text-slate-900">
       {/* Desktop Persistent Sidebar */}
       <div className="hidden md:flex h-full">
         <AdminSidebar

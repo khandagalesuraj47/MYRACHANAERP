@@ -78,62 +78,102 @@ export class PeopleRepository {
    */
   static async getMembers(organizationId: string): Promise<EnhancedMember[]> {
     try {
-      // 1. Fetch organization members
-      const { data: rawMembers, error: membersError } = await supabase
-        .from('organization_members')
-        .select('*')
-        .eq('organization_id', organizationId)
-        .order('created_at', { ascending: true })
-
-      if (membersError || !rawMembers) {
-        console.warn('[PeopleRepository] Failed to fetch organization members:', membersError)
-        return []
-      }
-
-      // 2. Fetch profiles for all members & discover any unlinked self-registered users
-      const { data: allProfiles } = await supabase.from('profiles').select('*')
+      let combinedRawMembers: any[] = []
       const profilesMap = new Map<string, Profile>()
 
-      if (allProfiles) {
-        allProfiles.forEach((p) => {
-          profilesMap.set(p.id, {
-            id: p.id,
-            email: p.email ?? null,
-            fullName: p.full_name ?? null,
-            isActive: p.is_active ?? true,
-            createdAt: p.created_at ?? '',
-            updatedAt: p.updated_at ?? '',
-          })
+      // 1. Primary Attempt: PostgreSQL SECURITY DEFINER RPC (bypasses RLS to fetch complete applicant details)
+      try {
+        const { data: rpcMembers, error: rpcErr } = await supabase.rpc('admin_get_organization_members', {
+          p_organization_id: organizationId,
         })
-      }
 
-      // Automatically synthesize pending member records for any registered user who signed up from login page
-      const existingUserIds = new Set(rawMembers.map((m) => m.user_id))
-      const pendingUnlinkedMembers: typeof rawMembers = []
-
-      if (allProfiles) {
-        allProfiles.forEach((p) => {
-          if (!existingUserIds.has(p.id)) {
-            pendingUnlinkedMembers.push({
-              id: p.id,
-              organization_id: organizationId,
-              user_id: p.id,
-              role: 'USER',
-              is_active: false,
-              site_id: null,
-              department_id: null,
-              custom_role_id: null,
-              designation: null,
-              employee_code: null,
-              phone: null,
-              created_at: p.created_at || new Date().toISOString(),
-              updated_at: p.updated_at || new Date().toISOString(),
+        if (!rpcErr && Array.isArray(rpcMembers) && rpcMembers.length > 0) {
+          rpcMembers.forEach((m: any) => {
+            profilesMap.set(m.user_id, {
+              id: m.user_id,
+              email: m.profile_email || m.auth_email || null,
+              fullName: m.profile_full_name || (m.profile_email ? m.profile_email.split('@')[0] : null),
+              isActive: m.is_active ?? true,
+              createdAt: m.auth_created_at || m.created_at || '',
+              updatedAt: m.updated_at || '',
             })
-          }
-        })
+          })
+
+          combinedRawMembers = rpcMembers.map((m: any) => ({
+            id: m.id,
+            organization_id: m.organization_id,
+            user_id: m.user_id,
+            role: m.role,
+            is_active: m.is_active,
+            site_id: m.site_id,
+            department_id: m.department_id,
+            custom_role_id: m.custom_role_id,
+            designation: m.designation,
+            employee_code: m.employee_code,
+            phone: m.phone,
+            created_at: m.created_at,
+            updated_at: m.updated_at,
+          }))
+        }
+      } catch (rpcEx) {
+        console.warn('[PeopleRepository] admin_get_organization_members RPC fallback:', rpcEx)
       }
 
-      const combinedRawMembers = [...rawMembers, ...pendingUnlinkedMembers]
+      // 2. Fallback: Table-based direct select if RPC not yet run in database
+      if (combinedRawMembers.length === 0) {
+        const { data: rawMembers, error: membersError } = await supabase
+          .from('organization_members')
+          .select('*')
+          .eq('organization_id', organizationId)
+          .order('created_at', { ascending: true })
+
+        if (membersError || !rawMembers) {
+          console.warn('[PeopleRepository] Failed to fetch organization members:', membersError)
+          return []
+        }
+
+        const { data: allProfiles } = await supabase.from('profiles').select('*')
+        if (allProfiles) {
+          allProfiles.forEach((p) => {
+            profilesMap.set(p.id, {
+              id: p.id,
+              email: p.email ?? null,
+              fullName: p.full_name ?? null,
+              isActive: p.is_active ?? true,
+              createdAt: p.created_at ?? '',
+              updatedAt: p.updated_at ?? '',
+            })
+          })
+        }
+
+        // Automatically synthesize pending member records for any registered user who signed up from login page
+        const existingUserIds = new Set(rawMembers.map((m) => m.user_id))
+        const pendingUnlinkedMembers: typeof rawMembers = []
+
+        if (allProfiles) {
+          allProfiles.forEach((p) => {
+            if (!existingUserIds.has(p.id)) {
+              pendingUnlinkedMembers.push({
+                id: p.id,
+                organization_id: organizationId,
+                user_id: p.id,
+                role: 'USER',
+                is_active: false,
+                site_id: null,
+                department_id: null,
+                custom_role_id: null,
+                designation: null,
+                employee_code: null,
+                phone: null,
+                created_at: p.created_at || new Date().toISOString(),
+                updated_at: p.updated_at || new Date().toISOString(),
+              })
+            }
+          })
+        }
+
+        combinedRawMembers = [...rawMembers, ...pendingUnlinkedMembers]
+      }
 
       // 3. Attempt to fetch task assignments for this organization
       const taskAssignmentsMap = new Map<string, UserTaskAssignment[]>()

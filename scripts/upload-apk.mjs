@@ -20,18 +20,18 @@ async function main() {
   const fileBuffer = fs.readFileSync(apkPath)
   console.log(`Uploading ${apkPath} (${(fileBuffer.length / 1024 / 1024).toFixed(2)} MB) to Supabase Storage...`)
 
-  // 1. Upload as myrachana-erp-v1.0.3.apk (Visible versioned file in Supabase dashboard)
+  // 1. Upload as myrachana-erp-v1.0.4.apk (Visible versioned file in Supabase dashboard)
   const { error: versionError } = await supabase.storage
     .from('apk-releases')
-    .upload('myrachana-erp-v1.0.3.apk', fileBuffer, {
+    .upload('myrachana-erp-v1.0.4.apk', fileBuffer, {
       contentType: 'application/vnd.android.package-archive',
       upsert: true,
     })
 
   if (versionError) {
-    console.error('Failed to upload myrachana-erp-v1.0.3.apk:', versionError.message)
+    console.error('Failed to upload myrachana-erp-v1.0.4.apk:', versionError.message)
   } else {
-    console.log('✅ Uploaded: myrachana-erp-v1.0.3.apk')
+    console.log('✅ Uploaded: myrachana-erp-v1.0.4.apk')
   }
 
   // 2. Upload / overwrite as myrachana-erp.apk (Permanent latest download link)
@@ -50,15 +50,15 @@ async function main() {
 
   const { data: vData } = supabase.storage
     .from('apk-releases')
-    .getPublicUrl('myrachana-erp-v1.0.3.apk')
+    .getPublicUrl('myrachana-erp-v1.0.4.apk')
 
   const { data: publicData } = supabase.storage
     .from('apk-releases')
     .getPublicUrl('myrachana-erp.apk')
 
   console.log('\n🎉 Both releases are live in Supabase Storage!')
-  console.log('Version 1.0.3 URL:', vData.publicUrl)
-  console.log('Latest URL:', publicData.publicUrl)
+  console.log('Version 1.0.4 URL:', vData.publicUrl)
+  console.log('Latest APK URL:', publicData.publicUrl)
 }
 
 main().catch(console.error)

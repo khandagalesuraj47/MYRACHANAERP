@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   X,
   ShieldCheck,
@@ -6,9 +6,16 @@ import {
   AlertCircle,
   Check,
   Loader2,
+  Trash2,
+  Calendar,
+  Phone,
+  User,
+  Mail,
+  AlertTriangle,
 } from 'lucide-react'
 import type { EnhancedMember, Site, Role, Department, TaskType } from '../../../types/rbac'
 import { PeopleRepository } from '../../../repositories/admin/people-repository'
+import { supabase } from '../../../lib/supabase'
 
 interface ApprovalModalProps {
   isOpen: boolean
@@ -47,8 +54,48 @@ export function ApprovalModal({
     return s
   })
 
+  // Direct fetch of profile details to guarantee 100% accuracy
+  const [fetchedProfile, setFetchedProfile] = useState<{
+    fullName: string | null
+    email: string | null
+    phone: string | null
+  } | null>(null)
+
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
+  // Direct profile verification on mount if profile info looks missing
+  useEffect(() => {
+    if (!member?.userId) return
+    let isMounted = true
+
+    async function resolveLiveProfile() {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('full_name, email')
+          .eq('id', member!.userId)
+          .maybeSingle()
+
+        if (!error && data && isMounted) {
+          setFetchedProfile({
+            fullName: data.full_name || null,
+            email: data.email || null,
+            phone: member!.phone || null,
+          })
+        }
+      } catch (err) {
+        console.warn('[ApprovalModal] Profile direct fetch error:', err)
+      }
+    }
+
+    resolveLiveProfile()
+    return () => {
+      isMounted = false
+    }
+  }, [member?.userId, member?.phone])
 
   if (!isOpen || !member) return null
 
@@ -109,24 +156,59 @@ export function ApprovalModal({
     }
   }
 
-  const memberName = member.profile?.fullName || member.profile?.email?.split('@')[0] || 'Unregistered User'
-  const memberEmail = member.profile?.email || 'No email'
+  const handleDeleteRequest = async () => {
+    setErrorMessage(null)
+    setIsDeleting(true)
+
+    try {
+      const res = await PeopleRepository.deleteMember(organizationId, member.id)
+      if (!res.success) {
+        setErrorMessage(res.error || 'Failed to delete registration request.')
+        setIsDeleting(false)
+        setShowDeleteConfirm(false)
+        return
+      }
+
+      onSuccess()
+      onClose()
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to delete registration request.'
+      setErrorMessage(msg)
+      setIsDeleting(false)
+      setShowDeleteConfirm(false)
+    }
+  }
+
+  // Resolved identity
+  const memberName =
+    fetchedProfile?.fullName ||
+    member.profile?.fullName ||
+    member.profile?.email?.split('@')[0] ||
+    'Applicant'
+
+  const memberEmail =
+    fetchedProfile?.email ||
+    member.profile?.email ||
+    (member.userId.includes('@') ? member.userId : 'Email not confirmed')
+
+  const memberPhone = member.phone || fetchedProfile?.phone || 'Not provided'
+  const memberDate = member.createdAt ? new Date(member.createdAt).toLocaleString() : 'Recent'
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-2xl rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-        {/* Modal Header */}
-        <div className="flex items-center justify-between border-b border-slate-800 px-6 py-4 bg-slate-950/50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/85 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="relative w-full max-w-2xl rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl overflow-hidden flex flex-col max-h-[92dvh] sm:max-h-[88vh]">
+        {/* Sticky Header */}
+        <div className="sticky top-0 z-20 flex items-center justify-between border-b border-slate-800 px-4 py-3.5 sm:px-6 sm:py-4 bg-slate-950/95 backdrop-blur-md">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-emerald-950/80 border border-emerald-800/80 text-emerald-400">
+            <div className="p-2 rounded-xl bg-emerald-950/80 border border-emerald-800/80 text-emerald-400">
               <ShieldCheck className="h-5 w-5" />
             </div>
-            <div>
-              <h2 className="text-base font-bold text-white tracking-tight">
-                Authorize Registration Request
+            <div className="text-left">
+              <h2 className="text-sm sm:text-base font-bold text-white tracking-tight">
+                Review & Authorize Applicant
               </h2>
-              <p className="text-xs text-slate-400">
-                Verify account identity, configure strict site assignment, and assign operational task roles.
+              <p className="text-[11px] sm:text-xs text-slate-400">
+                Verify identity, enforce strict single-site assignment, and grant operational duties.
               </p>
             </div>
           </div>
@@ -139,8 +221,8 @@ export function ApprovalModal({
           </button>
         </div>
 
-        {/* Modal Body */}
-        <form onSubmit={handleApprove} className="flex-1 overflow-y-auto p-6 space-y-5 text-left">
+        {/* Modal Scrollable Body */}
+        <form onSubmit={handleApprove} className="flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5 space-y-4 sm:space-y-5 text-left">
           {errorMessage && (
             <div className="p-3.5 rounded-xl bg-rose-950/40 border border-rose-800/60 text-rose-300 text-xs flex items-center gap-2">
               <AlertCircle className="h-4 w-4 shrink-0" />
@@ -148,19 +230,48 @@ export function ApprovalModal({
             </div>
           )}
 
-          {/* User Details Summary */}
-          <div className="p-4 rounded-xl border border-slate-800 bg-slate-950/70 space-y-2 text-xs font-mono">
-            <div className="flex items-center justify-between">
-              <span className="text-slate-400">Applicant Name:</span>
-              <span className="text-white font-bold">{memberName}</span>
+          {/* User Details Summary Card */}
+          <div className="p-4 rounded-xl border border-slate-800 bg-slate-950/80 space-y-2.5 text-xs font-mono">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-slate-800/80 pb-2">
+              <span className="text-slate-400 flex items-center gap-1.5">
+                <User className="h-3.5 w-3.5 text-blue-400" />
+                Applicant Full Name:
+              </span>
+              <span className="text-white font-bold text-sm">{memberName}</span>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-slate-400">Email Address:</span>
-              <span className="text-blue-400 font-medium">{memberEmail}</span>
+
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-slate-800/80 pb-2">
+              <span className="text-slate-400 flex items-center gap-1.5">
+                <Mail className="h-3.5 w-3.5 text-blue-400" />
+                Email Address:
+              </span>
+              <span className="text-blue-400 font-semibold">{memberEmail}</span>
             </div>
-            <div className="flex items-center justify-between">
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] pt-1">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400 flex items-center gap-1.5">
+                  <Phone className="h-3 w-3 text-slate-500" />
+                  Phone:
+                </span>
+                <span className="text-slate-300">{memberPhone}</span>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400 flex items-center gap-1.5">
+                  <Calendar className="h-3 w-3 text-slate-500" />
+                  Registered At:
+                </span>
+                <span className="text-slate-300">{memberDate}</span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-1 border-t border-slate-800/60 text-[11px]">
               <span className="text-slate-400">Current Status:</span>
-              <span className="text-amber-400 font-bold uppercase tracking-wider">Pending Admin Approval</span>
+              <span className="inline-flex items-center gap-1.5 text-amber-400 font-bold uppercase tracking-wider">
+                <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+                Pending Authorization
+              </span>
             </div>
           </div>
 
@@ -321,35 +432,107 @@ export function ApprovalModal({
             </div>
           </div>
 
-          {/* Modal Footer Buttons */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+          {/* Sticky Modal Footer Actions */}
+          <div className="sticky bottom-0 z-20 -mx-4 -mb-4 sm:-mx-6 sm:-mb-5 p-4 sm:p-5 bg-slate-950/95 border-t border-slate-800 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            {/* Left: Reject & Delete Button */}
             <button
               type="button"
-              onClick={onClose}
-              disabled={isSubmitting}
-              className="rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-xs font-medium text-slate-300 hover:bg-slate-750 transition-colors cursor-pointer disabled:opacity-50"
+              onClick={() => setShowDeleteConfirm(true)}
+              disabled={isSubmitting || isDeleting}
+              className="flex items-center justify-center gap-1.5 rounded-xl border border-rose-800/80 bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 px-3.5 py-2.5 text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
             >
-              Cancel
+              <Trash2 className="h-3.5 w-3.5 text-rose-400" />
+              <span>Reject & Delete Request</span>
             </button>
-            <button
-              type="submit"
-              disabled={isSubmitting || !selectedSiteId}
-              className="flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 px-5 py-2.5 text-xs font-bold text-white transition-all cursor-pointer shadow-lg shadow-emerald-600/20"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Authorizing...</span>
-                </>
-              ) : (
-                <>
-                  <ShieldCheck className="h-4 w-4" />
-                  <span>Approve & Authorize User</span>
-                </>
-              )}
-            </button>
+
+            {/* Right: Cancel & Approve */}
+            <div className="flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={isSubmitting || isDeleting}
+                className="flex-1 sm:flex-none rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-xs font-medium text-slate-300 hover:bg-slate-750 transition-colors cursor-pointer disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isSubmitting || isDeleting || !selectedSiteId}
+                className="flex-1 sm:flex-none flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 px-5 py-2.5 text-xs font-bold text-white transition-all cursor-pointer shadow-lg shadow-emerald-600/20"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Authorizing...</span>
+                  </>
+                ) : (
+                  <>
+                    <ShieldCheck className="h-4 w-4" />
+                    <span>Approve & Authorize User</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </form>
+
+        {/* Delete Confirmation Modal Layer */}
+        {showDeleteConfirm && (
+          <div className="absolute inset-0 z-30 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md animate-in fade-in">
+            <div className="w-full max-w-md rounded-2xl border border-rose-700/80 bg-slate-900 p-6 shadow-2xl text-left space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-rose-950 text-rose-400 border border-rose-800">
+                  <AlertTriangle className="h-6 w-6" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">
+                    Permanently Delete Registration?
+                  </h3>
+                  <p className="text-xs text-rose-300/80">
+                    This action cannot be undone.
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-mono text-slate-300 space-y-1">
+                <div>Applicant: <strong className="text-white">{memberName}</strong></div>
+                <div>Email: <strong className="text-blue-400">{memberEmail}</strong></div>
+                <p className="text-[11px] text-slate-400 pt-1">
+                  This user account will be completely removed from Supabase authentication, profiles, and organization records.
+                </p>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  disabled={isDeleting}
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="rounded-xl border border-slate-700 bg-slate-800 px-4 py-2 text-xs font-medium text-slate-300 hover:bg-slate-750 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={isDeleting}
+                  onClick={handleDeleteRequest}
+                  className="flex items-center gap-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white px-4 py-2 text-xs font-bold transition-colors cursor-pointer shadow-lg shadow-rose-600/20"
+                >
+                  {isDeleting ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      <span>Deleting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="h-3.5 w-3.5" />
+                      <span>Confirm Permanent Deletion</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

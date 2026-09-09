@@ -9,6 +9,7 @@ import {
   FolderKanban,
   Package,
   Building2,
+  Settings,
 } from 'lucide-react'
 
 interface NavItem {
@@ -40,6 +41,12 @@ const NAV_SECTIONS: NavSection[] = [
       { name: 'Asset Master', icon: Cpu, id: 'asset-master' },
       { name: 'Vendor Master', icon: Building2, id: 'vendor-master' },
       { name: 'Diesel Requisition', icon: Fuel, id: 'diesel-requisition' },
+    ],
+  },
+  {
+    title: 'SYSTEM & SETTINGS',
+    items: [
+      { name: 'Settings & Updates', icon: Settings, id: 'settings' },
     ],
   },
 ]

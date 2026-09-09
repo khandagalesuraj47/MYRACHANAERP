@@ -24,6 +24,7 @@ import type {
   TaskType,
 } from '../../../types/rbac'
 import { PeopleRepository, type PasswordResetRequest } from '../../../repositories/admin/people-repository'
+import { supabase } from '../../../lib/supabase'
 import { UserDetailDrawer } from './user-detail-drawer'
 import { CreateUserModal } from './create-user-modal'
 import { TaskMatrixView } from './task-matrix-view'
@@ -101,6 +102,44 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
     queueMicrotask(() => {
       void loadData()
     })
+
+    // Realtime Supabase Channel for Personnel, Profiles, and Password Reset Requests
+    const channelName = `admin-people-sync-${organizationId}`
+    const channel = supabase
+      .channel(channelName)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'organization_members' },
+        () => {
+          void loadData()
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'profiles' },
+        () => {
+          void loadData()
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'password_reset_requests' },
+        () => {
+          void loadData()
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'user_task_assignments' },
+        () => {
+          void loadData()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      channel.unsubscribe()
+    }
   }, [organizationId, loadData])
 
   const handleToggleStatus = async (member: EnhancedMember) => {

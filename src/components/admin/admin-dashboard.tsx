@@ -18,6 +18,7 @@ import { ItemMasterView } from './mechanical/item-master-view'
 import { AssetMasterView } from './mechanical/asset-master-view'
 import { VendorMasterView } from './mechanical/vendor-master-view'
 import { DieselRequisitionView } from './mechanical/diesel-requisition-view'
+import { AppSettingsView } from '../common/app-settings-view'
 import { ProjectsRepository } from '../../repositories/erp/projects-repository'
 import { AdminRepository, type OrganizationStats } from '../../repositories/admin/admin-repository'
 import { useAuth } from '../../context/auth-context'
@@ -105,6 +106,8 @@ export function AdminDashboard() {
           ? 'Vendor Master (Mechanical)'
           : activeModule === 'diesel-requisition'
           ? 'Diesel Requisition (Mechanical)'
+          : activeModule === 'settings'
+          ? 'Settings & Updates'
           : 'Overview'
       }
     >
@@ -371,6 +374,8 @@ export function AdminDashboard() {
           organizationId={organization.id}
           organizationName={organization.name}
         />
+      ) : activeModule === 'settings' ? (
+        <AppSettingsView />
       ) : (
         <ProjectsSitesView
           organizationId={organization.id}

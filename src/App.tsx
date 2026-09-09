@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { SignInPage } from './components/ui/sign-in-page'
 import { ResetPasswordPage } from './components/ui/reset-password-page'
@@ -8,6 +8,7 @@ import { AuthProvider } from './context/auth-provider'
 import { useAuth } from './context/auth-context'
 import { MandatoryPasswordChangeModal } from './components/ui/mandatory-password-change-modal'
 import { AppUpdateBanner } from './components/common/app-update-banner'
+import { supabase } from './lib/supabase'
 
 function WorkspaceLoadingScreen({ message = 'Loading your workspace...' }: { message?: string }) {
   return (
@@ -25,9 +26,35 @@ function NoOrganizationAccessScreen({
   message?: string
   status?: string
 }) {
-  const { signOut, refreshContext } = useAuth()
+  const { signOut, refreshContext, context: authContext } = useAuth()
   const navigate = useNavigate()
   const [retrying, setRetrying] = useState(false)
+
+  // Realtime Supabase Listener: Auto-unlock workspace the second Admin authorizes account!
+  useEffect(() => {
+    if (!authContext?.userId) return
+
+    const channelName = `pending-approval-unlock-${authContext.userId}`
+    const channel = supabase
+      .channel(channelName)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'organization_members',
+          filter: `user_id=eq.${authContext.userId}`,
+        },
+        async () => {
+          await refreshContext()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      channel.unsubscribe()
+    }
+  }, [authContext?.userId, refreshContext])
 
   const handleSignOut = async () => {
     await signOut()
