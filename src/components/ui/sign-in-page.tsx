@@ -311,8 +311,10 @@ export function SignInPage({ onSuccess, onNavigateHome }: SignInPageProps) {
           {/* Android App Download Banner */}
           <div className="pt-2 border-t border-slate-100">
             <a
-              href="/downloads/myrachana-erp.apk"
+              href="https://gmhvckxqfarpkfpvuspj.supabase.co/storage/v1/object/public/apk-releases/myrachana-erp.apk"
               download="myrachana-erp.apk"
+              target="_blank"
+              rel="noopener noreferrer"
               className="flex items-center justify-between p-3 rounded-xl bg-slate-50 hover:bg-blue-50/60 border border-slate-200 hover:border-blue-200 transition-all text-left group"
             >
               <div className="flex items-center gap-3">

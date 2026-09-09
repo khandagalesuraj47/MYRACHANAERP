@@ -60,8 +60,10 @@ export function AdminHeader({
 
         {/* Android APK Download Button */}
         <a
-          href="/downloads/myrachana-erp.apk"
+          href="https://gmhvckxqfarpkfpvuspj.supabase.co/storage/v1/object/public/apk-releases/myrachana-erp.apk"
           download="myrachana-erp.apk"
+          target="_blank"
+          rel="noopener noreferrer"
           className="hidden sm:inline-flex items-center gap-1.5 rounded-lg border border-emerald-900/60 bg-emerald-950/40 hover:bg-emerald-900/40 px-2.5 py-1.5 text-xs font-mono font-medium text-emerald-400 hover:text-emerald-300 transition-colors cursor-pointer"
           title="Download Android APK"
         >
