@@ -1,69 +1,46 @@
 /**
- * Core Multi-Company / Multi-Tenant Organizational Foundation
+ * Core Multi-Tenant Database Foundation Types
  *
- * Hierarchy:
- * Platform
- *  └── Company
- *        └── Business Unit
- *              └── Department
- *                    └── Project
- *                          └── Site
- *                                └── Location
+ * Entity Hierarchy:
+ * Organization
+ *    └── Organization Members (Users with Roles: ADMIN, USER)
+ *           └── Profiles (auth.users extension)
  */
 
-export interface Company {
+export type UserRole = 'ADMIN' | 'USER'
+
+export interface Organization {
   id: string
-  code: string
   name: string
-  createdAt?: string
-  updatedAt?: string
+  slug: string
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
 }
 
-export interface BusinessUnit {
+export interface Profile {
   id: string
-  companyId: string
-  code: string
-  name: string
+  email: string | null
+  fullName: string | null
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
 }
 
-export interface Department {
+export interface OrganizationMember {
   id: string
-  companyId: string
-  code: string
-  name: string
+  organizationId: string
+  userId: string
+  role: UserRole
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
 }
 
-export interface Project {
-  id: string
-  companyId: string
-  businessUnitId?: string
-  code: string
-  name: string
+export interface UserSessionContext {
+  user: Profile | null
+  organization: Organization | null
+  role: UserRole | null
 }
 
-export interface Site {
-  id: string
-  companyId: string
-  projectId: string
-  code: string
-  name: string
-  locationCity?: string
-}
-
-export interface Location {
-  id: string
-  companyId: string
-  siteId: string
-  code: string
-  name: string
-  type: string
-}
-
-export interface UserProfile {
-  id: string
-  email: string
-  fullName: string
-  activeCompanyId: string
-  role: string
-}
 
