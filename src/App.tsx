@@ -1,236 +1,158 @@
-import React, { useState, useEffect } from 'react'
+import React from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { SignInPage } from './components/ui/sign-in-page'
 import { ResetPasswordPage } from './components/ui/reset-password-page'
 import { AdminDashboard } from './components/admin/admin-dashboard'
-import { supabase, isSupabaseConfigured } from './lib/supabase'
-import type { User } from '@supabase/supabase-js'
+import { UserPortal } from './components/user/user-portal'
+import { AuthProvider } from './context/auth-provider'
+import { useAuth } from './context/auth-context'
 
-
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user)
-      setLoading(false)
-    })
-
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-    })
-
-    return () => {
-      authListener.subscription.unsubscribe()
-    }
-  }, [])
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-400 font-mono text-xs">
-        Verifying authorization...
-      </div>
-    )
-  }
-
-  if (!user) {
-    return <Navigate to="/login" replace />
-  }
-
-  return <>{children}</>
+function WorkspaceLoadingScreen({ message = 'Loading your workspace...' }: { message?: string }) {
+  return (
+    <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-400 font-mono text-xs gap-3">
+      <div className="w-8 h-8 rounded-full border-2 border-blue-500/20 border-t-blue-500 animate-spin" />
+      <p className="text-slate-300 font-medium">{message}</p>
+    </div>
+  )
 }
 
-function AdminRoute({ children }: { children: React.ReactNode }) {
-
-  const [authorized, setAuthorized] = useState<boolean | null>(null)
-
-  useEffect(() => {
-    supabase.auth.getUser().then(async ({ data: authData }) => {
-      if (!authData.user) {
-        setAuthorized(false)
-        return
-      }
-
-      // Check organization_members for ADMIN role
-      const { data: member, error } = await supabase
-        .from('organization_members')
-        .select('role, is_active')
-        .eq('user_id', authData.user.id)
-        .eq('is_active', true)
-        .limit(1)
-        .maybeSingle()
-
-      if (error || !member || member.role !== 'ADMIN') {
-        setAuthorized(false)
-      } else {
-        setAuthorized(true)
-      }
-    })
-  }, [])
-
-  if (authorized === null) {
-    return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-400 font-mono text-xs">
-        Verifying administrator authorization...
-      </div>
-    )
-  }
-
-  if (!authorized) {
-    return <Navigate to="/" replace />
-  }
-
-  return <>{children}</>
-}
-
-function EnterpriseLanding() {
+function NoOrganizationAccessScreen({
+  message = 'Your account is not assigned to an active organization. Please contact your administrator.',
+}: {
+  message?: string
+}) {
+  const { signOut } = useAuth()
   const navigate = useNavigate()
-  const [user, setUser] = useState<User | null>(null)
-  const [isAdmin, setIsAdmin] = useState(false)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    supabase.auth.getUser().then(async ({ data }) => {
-      setUser(data.user)
-      if (data.user) {
-        const { data: member } = await supabase
-          .from('organization_members')
-          .select('role')
-          .eq('user_id', data.user.id)
-          .eq('is_active', true)
-          .limit(1)
-          .maybeSingle()
-
-        if (member?.role === 'ADMIN') {
-          setIsAdmin(true)
-        }
-      }
-      setLoading(false)
-    })
-
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-    })
-
-    return () => {
-      authListener.subscription.unsubscribe()
-    }
-  }, [])
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut()
-    setUser(null)
-    navigate('/login')
+    await signOut()
+    navigate('/login', { replace: true })
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center justify-center p-6 font-sans antialiased">
-      <div className="w-full max-w-xl bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl space-y-6 text-left">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-6 font-sans antialiased select-none">
+      <div className="w-full max-w-md rounded-2xl border border-rose-900/40 bg-slate-900/90 p-8 shadow-2xl space-y-6 text-left">
         <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-mono font-bold tracking-wider uppercase text-blue-400 bg-blue-950/80 border border-blue-800/80 px-2.5 py-1 rounded">
-              ENTERPRISE ERP FOUNDATION
-            </span>
-            <span className="text-xs font-mono text-emerald-400 flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-              AUTHENTICATED
-            </span>
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-rose-950/80 border border-rose-800/80 text-rose-400 font-mono text-xs font-bold uppercase tracking-wider">
+            Access Restricted
           </div>
-
-          <h1 className="text-2xl font-extrabold text-white tracking-tight">
-            Rachana Construction Limited
-          </h1>
-          <p className="text-xs text-slate-400 font-mono">
-            Heavy Civil Engineering ERP Platform
+          <h1 className="text-xl font-bold text-white tracking-tight">Organization Membership Required</h1>
+          <p className="text-xs text-slate-300 leading-relaxed font-sans">
+            {message}
           </p>
         </div>
 
-        {/* Auth status panel */}
-        <div className="p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-2.5 text-xs text-slate-300 font-mono">
-          <div className="font-bold text-slate-200">Active Workspace Session:</div>
-          {loading ? (
-            <div className="text-slate-400">Loading session...</div>
-          ) : user ? (
-            <div className="space-y-1.5 text-emerald-400">
-              <div>✓ Signed in as: <span className="text-white font-semibold">{user.email}</span></div>
-              <div className="text-slate-400 text-[11px]">User ID: {user.id}</div>
-              <div className="text-slate-400 text-[11px]">Last Sign In: {user.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleString() : 'Just now'}</div>
-            </div>
-          ) : (
-            <div className="text-slate-400">
-              Session terminated.
-            </div>
-          )}
-
-          <div className="border-t border-slate-800 pt-2 text-slate-400 space-y-1">
-            <div className="flex items-center gap-2">
-              <span className={isSupabaseConfigured ? 'text-emerald-400' : 'text-amber-400'}>●</span>
-              <span>Supabase Connection: {isSupabaseConfigured ? 'Configured & Active' : 'Pending Environment Variables'}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-emerald-400">●</span>
-              <span>Security Governance: Public Anon Client Only (Zero Secret Leakage)</span>
-            </div>
-          </div>
+        <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs font-mono text-slate-400 space-y-1">
+          <div>Status: <span className="text-rose-400 font-semibold">Unassigned / Inactive</span></div>
+          <div className="text-[11px] text-slate-500">To gain access to your company workspace, please contact your organization system administrator to assign you an active role.</div>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3 pt-2">
-          {isAdmin && (
-            <button
-              type="button"
-              onClick={() => navigate('/admin')}
-              className="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs transition-colors cursor-pointer"
-            >
-              Open Admin Dashboard →
-            </button>
-          )}
-
+        <div className="pt-2">
           <button
             type="button"
             onClick={handleSignOut}
-            className="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-medium text-xs transition-colors cursor-pointer"
+            className="w-full py-2.5 px-4 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-medium text-xs transition-colors cursor-pointer"
           >
             Sign Out
           </button>
-
-          <a
-            href="https://github.com/khandagalesuraj47/MYRACHANAERP"
-            target="_blank"
-            rel="noreferrer"
-            className="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-center font-medium text-xs transition-colors"
-          >
-            GitHub Repository
-          </a>
         </div>
       </div>
     </div>
   )
 }
 
+function RootDispatcher() {
+  const { context, loading } = useAuth()
+
+  if (loading) {
+    return <WorkspaceLoadingScreen message="Loading your workspace..." />
+  }
+
+  if (!context || context.status === 'UNAUTHENTICATED') {
+    return <Navigate to="/login" replace />
+  }
+
+  if (context.status === 'SUCCESS') {
+    if (context.role === 'ADMIN') {
+      return <Navigate to="/admin" replace />
+    }
+    return <Navigate to="/app" replace />
+  }
+
+  return <NoOrganizationAccessScreen message={context.errorMessage} />
+}
+
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { context, loading } = useAuth()
+
+  if (loading) {
+    return <WorkspaceLoadingScreen message="Verifying administrator authorization..." />
+  }
+
+  if (!context || context.status === 'UNAUTHENTICATED') {
+    return <Navigate to="/login" replace />
+  }
+
+  if (context.status === 'SUCCESS') {
+    if (context.role === 'ADMIN') {
+      return <>{children}</>
+    }
+    // Normal user attempting to access /admin -> redirect to /app
+    return <Navigate to="/app" replace />
+  }
+
+  return <NoOrganizationAccessScreen message={context.errorMessage} />
+}
+
+function UserRoute() {
+  const { context, loading } = useAuth()
+
+  if (loading) {
+    return <WorkspaceLoadingScreen message="Loading user workspace..." />
+  }
+
+  if (!context || context.status === 'UNAUTHENTICATED') {
+    return <Navigate to="/login" replace />
+  }
+
+  if (context.status === 'SUCCESS') {
+    if (context.role === 'ADMIN') {
+      // Administrator attempting to access /app -> redirect to /admin
+      return <Navigate to="/admin" replace />
+    }
+    return <UserPortal context={context} />
+  }
+
+  return <NoOrganizationAccessScreen message={context.errorMessage} />
+}
+
 function LoginPageWrapper() {
+  const { context, loading, refreshContext } = useAuth()
   const navigate = useNavigate()
+
+  // If already authenticated and resolved, redirect to appropriate portal
+  if (!loading && context?.status === 'SUCCESS') {
+    if (context.role === 'ADMIN') {
+      return <Navigate to="/admin" replace />
+    }
+    return <Navigate to="/app" replace />
+  }
 
   return (
     <SignInPage
       onSuccess={async () => {
-        // Direct admin users to /admin, others to /
-        const { data: authData } = await supabase.auth.getUser()
-        if (authData.user) {
-          const { data: member } = await supabase
-            .from('organization_members')
-            .select('role')
-            .eq('user_id', authData.user.id)
-            .eq('is_active', true)
-            .limit(1)
-            .maybeSingle()
-
-          if (member?.role === 'ADMIN') {
-            navigate('/admin')
-            return
+        const res = await refreshContext()
+        if (res.status === 'SUCCESS') {
+          if (res.role === 'ADMIN') {
+            navigate('/admin', { replace: true })
+          } else {
+            navigate('/app', { replace: true })
           }
+        } else if (res.status === 'UNAUTHENTICATED') {
+          navigate('/login', { replace: true })
+        } else {
+          navigate('/', { replace: true })
         }
-        navigate('/')
       }}
       onNavigateHome={() => navigate('/')}
     />
@@ -240,32 +162,25 @@ function LoginPageWrapper() {
 export function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<LoginPageWrapper />} />
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
-        <Route
-          path="/admin"
-          element={
-            <AdminRoute>
-              <AdminDashboard />
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <EnterpriseLanding />
-            </ProtectedRoute>
-          }
-        />
-        <Route path="*" element={<Navigate to="/login" replace />} />
-      </Routes>
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<LoginPageWrapper />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route
+            path="/admin"
+            element={
+              <AdminRoute>
+                <AdminDashboard />
+              </AdminRoute>
+            }
+          />
+          <Route path="/app" element={<UserRoute />} />
+          <Route path="/" element={<RootDispatcher />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+      </AuthProvider>
     </BrowserRouter>
   )
 }
 
 export default App
-
-
-
