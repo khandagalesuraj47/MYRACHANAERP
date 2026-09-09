@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { SignInPage } from './components/ui/sign-in-page'
 import { ResetPasswordPage } from './components/ui/reset-password-page'
+import { AdminDashboard } from './components/admin/admin-dashboard'
 import { supabase, isSupabaseConfigured } from './lib/supabase'
 import type { User } from '@supabase/supabase-js'
+
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
@@ -39,14 +41,71 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }
 
+function AdminRoute({ children }: { children: React.ReactNode }) {
+
+  const [authorized, setAuthorized] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    supabase.auth.getUser().then(async ({ data: authData }) => {
+      if (!authData.user) {
+        setAuthorized(false)
+        return
+      }
+
+      // Check organization_members for ADMIN role
+      const { data: member, error } = await supabase
+        .from('organization_members')
+        .select('role, is_active')
+        .eq('user_id', authData.user.id)
+        .eq('is_active', true)
+        .limit(1)
+        .maybeSingle()
+
+      if (error || !member || member.role !== 'ADMIN') {
+        setAuthorized(false)
+      } else {
+        setAuthorized(true)
+      }
+    })
+  }, [])
+
+  if (authorized === null) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-400 font-mono text-xs">
+        Verifying administrator authorization...
+      </div>
+    )
+  }
+
+  if (!authorized) {
+    return <Navigate to="/" replace />
+  }
+
+  return <>{children}</>
+}
+
 function EnterpriseLanding() {
   const navigate = useNavigate()
   const [user, setUser] = useState<User | null>(null)
+  const [isAdmin, setIsAdmin] = useState(false)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
+    supabase.auth.getUser().then(async ({ data }) => {
       setUser(data.user)
+      if (data.user) {
+        const { data: member } = await supabase
+          .from('organization_members')
+          .select('role')
+          .eq('user_id', data.user.id)
+          .eq('is_active', true)
+          .limit(1)
+          .maybeSingle()
+
+        if (member?.role === 'ADMIN') {
+          setIsAdmin(true)
+        }
+      }
       setLoading(false)
     })
 
@@ -85,7 +144,6 @@ function EnterpriseLanding() {
           <p className="text-xs text-slate-400 font-mono">
             Heavy Civil Engineering ERP Platform
           </p>
-
         </div>
 
         {/* Auth status panel */}
@@ -118,6 +176,16 @@ function EnterpriseLanding() {
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3 pt-2">
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => navigate('/admin')}
+              className="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs transition-colors cursor-pointer"
+            >
+              Open Admin Dashboard →
+            </button>
+          )}
+
           <button
             type="button"
             onClick={handleSignOut}
@@ -145,7 +213,25 @@ function LoginPageWrapper() {
 
   return (
     <SignInPage
-      onSuccess={() => navigate('/')}
+      onSuccess={async () => {
+        // Direct admin users to /admin, others to /
+        const { data: authData } = await supabase.auth.getUser()
+        if (authData.user) {
+          const { data: member } = await supabase
+            .from('organization_members')
+            .select('role')
+            .eq('user_id', authData.user.id)
+            .eq('is_active', true)
+            .limit(1)
+            .maybeSingle()
+
+          if (member?.role === 'ADMIN') {
+            navigate('/admin')
+            return
+          }
+        }
+        navigate('/')
+      }}
       onNavigateHome={() => navigate('/')}
     />
   )
@@ -157,6 +243,14 @@ export function App() {
       <Routes>
         <Route path="/login" element={<LoginPageWrapper />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route
+          path="/admin"
+          element={
+            <AdminRoute>
+              <AdminDashboard />
+            </AdminRoute>
+          }
+        />
         <Route
           path="/"
           element={
@@ -172,5 +266,6 @@ export function App() {
 }
 
 export default App
+
 
 
