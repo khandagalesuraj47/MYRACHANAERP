@@ -755,3 +755,4 @@ $$;
 GRANT EXECUTE ON FUNCTION public.get_current_user_context() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_user_effective_permissions(UUID, UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.has_permission(TEXT, UUID) TO authenticated;
+

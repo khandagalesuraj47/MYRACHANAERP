@@ -5,10 +5,16 @@ import { AdminHero } from './admin-hero'
 import { AdminKpiGrid } from './admin-kpi-grid'
 import { AdminSystemStatus } from './admin-system-status'
 import { PeopleDirectory } from './people/people-directory'
+import { FuelDieselView } from './operations/fuel-diesel-view'
+import { FleetMachineryView } from './operations/fleet-machinery-view'
+import { InventoryMaterialsView } from './operations/inventory-materials-view'
+import { ProcurementView } from './operations/procurement-view'
+import { DynamicFormsView } from './operations/dynamic-forms-view'
+import { ApprovalWorkflowsView } from './operations/approval-workflows-view'
+import { AuditLogsView } from './operations/audit-logs-view'
 import { AdminRepository, type OrganizationStats } from '../../repositories/admin/admin-repository'
 import { useAuth } from '../../context/auth-context'
 import { supabase } from '../../lib/supabase'
-import { Layers } from 'lucide-react'
 import type { Profile, Organization } from '../../types/foundation'
 
 export function AdminDashboard() {
@@ -135,6 +141,20 @@ export function AdminDashboard() {
           ? 'Overview'
           : activeModule === 'people'
           ? 'People & Access'
+          : activeModule === 'fuel'
+          ? 'Fuel & Diesel Logs'
+          : activeModule === 'fleet' || activeModule === 'machines'
+          ? 'Machinery & Fleet'
+          : activeModule === 'inventory' || activeModule === 'material'
+          ? 'Inventory & Materials'
+          : activeModule === 'purchase'
+          ? 'Procurement & POs'
+          : activeModule === 'forms'
+          ? 'Dynamic Forms'
+          : activeModule === 'workflows'
+          ? 'Approval Workflows'
+          : activeModule === 'audit-logs'
+          ? 'Audit Logs'
           : activeModule.toUpperCase()
       }
     >
@@ -166,28 +186,25 @@ export function AdminDashboard() {
           organizationId={organization.id}
           organizationName={organization.name}
         />
+      ) : activeModule === 'fuel' ? (
+        <FuelDieselView organizationId={organization.id} />
+      ) : activeModule === 'fleet' || activeModule === 'machines' ? (
+        <FleetMachineryView organizationId={organization.id} />
+      ) : activeModule === 'inventory' || activeModule === 'material' ? (
+        <InventoryMaterialsView organizationId={organization.id} />
+      ) : activeModule === 'purchase' ? (
+        <ProcurementView organizationId={organization.id} />
+      ) : activeModule === 'forms' ? (
+        <DynamicFormsView organizationId={organization.id} />
+      ) : activeModule === 'workflows' ? (
+        <ApprovalWorkflowsView organizationId={organization.id} />
+      ) : activeModule === 'audit-logs' ? (
+        <AuditLogsView organizationId={organization.id} />
       ) : (
-        /* Future ERP Modules Placeholder */
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-12 text-center space-y-4">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-950/60 border border-blue-800/60 text-blue-400">
-            <Layers className="h-6 w-6" />
-          </div>
-          <div className="space-y-1">
-            <h3 className="text-base font-semibold text-white capitalize">
-              {activeModule.replace('-', ' ')} Module
-            </h3>
-            <p className="text-xs text-slate-400 max-w-md mx-auto">
-              This operational domain is architected and prepared for step-by-step implementation. Database schema and workflows will connect incrementally.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setActiveModule('dashboard')}
-            className="inline-flex items-center gap-2 rounded-lg bg-slate-800 hover:bg-slate-750 px-4 py-2 text-xs font-medium text-slate-200 transition-colors cursor-pointer"
-          >
-            Back to Dashboard
-          </button>
-        </div>
+        <PeopleDirectory
+          organizationId={organization.id}
+          organizationName={organization.name}
+        />
       )}
     </AdminLayout>
   )
