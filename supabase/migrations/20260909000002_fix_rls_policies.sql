@@ -245,26 +245,33 @@ BEGIN
     RETURN jsonb_build_object(
         'status', 'SUCCESS',
         'userId', v_uid,
+        'user_id', v_uid,
         'email', COALESCE(v_profile.email, auth.jwt()->>'email'),
         'role', v_member.role,
         'profile', jsonb_build_object(
             'id', v_uid,
             'email', v_profile.email,
             'fullName', v_profile.full_name,
-            'isActive', COALESCE(v_profile.is_active, true)
+            'full_name', v_profile.full_name,
+            'isActive', COALESCE(v_profile.is_active, true),
+            'is_active', COALESCE(v_profile.is_active, true)
         ),
         'membership', jsonb_build_object(
             'id', v_member.id,
             'organizationId', v_member.organization_id,
+            'organization_id', v_member.organization_id,
             'userId', v_member.user_id,
+            'user_id', v_member.user_id,
             'role', v_member.role,
-            'isActive', v_member.is_active
+            'isActive', v_member.is_active,
+            'is_active', v_member.is_active
         ),
         'organization', jsonb_build_object(
             'id', v_org.id,
             'name', v_org.name,
             'slug', v_org.slug,
-            'isActive', v_org.is_active
+            'isActive', v_org.is_active,
+            'is_active', v_org.is_active
         )
     );
 END;
@@ -275,3 +282,4 @@ GRANT EXECUTE ON FUNCTION public.get_current_user_context() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_user_org_ids() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.is_member_of(UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.is_org_admin(UUID) TO authenticated;
+

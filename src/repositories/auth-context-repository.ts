@@ -23,33 +23,47 @@ export interface UserContextResult {
 interface RpcContextPayload {
   status: UserResolutionStatus
   userId?: string
+  user_id?: string
   email?: string
   role?: UserRole
   errorMessage?: string
+  error_message?: string
   profile?: {
     id: string
-    email: string | null
-    fullName: string | null
-    isActive: boolean
+    email?: string | null
+    fullName?: string | null
+    full_name?: string | null
+    isActive?: boolean
+    is_active?: boolean
     createdAt?: string
+    created_at?: string
     updatedAt?: string
+    updated_at?: string
   }
   membership?: {
     id: string
-    organizationId: string
-    userId: string
+    organizationId?: string
+    organization_id?: string
+    userId?: string
+    user_id?: string
     role: UserRole
-    isActive: boolean
+    isActive?: boolean
+    is_active?: boolean
     createdAt?: string
+    created_at?: string
     updatedAt?: string
+    updated_at?: string
   }
   organization?: {
     id: string
     name: string
     slug: string
-    isActive: boolean
+    isActive?: boolean
+    is_active?: boolean
     createdAt?: string
+    created_at?: string
     updatedAt?: string
+    updated_at?: string
   }
 }
 
@@ -85,28 +99,28 @@ export class AuthContextRepository {
               id: payload.organization.id,
               name: payload.organization.name,
               slug: payload.organization.slug,
-              isActive: payload.organization.isActive,
-              createdAt: payload.organization.createdAt ?? '',
-              updatedAt: payload.organization.updatedAt ?? '',
+              isActive: payload.organization.isActive ?? payload.organization.is_active ?? true,
+              createdAt: payload.organization.createdAt ?? payload.organization.created_at ?? '',
+              updatedAt: payload.organization.updatedAt ?? payload.organization.updated_at ?? '',
             }
 
             const membership: OrganizationMember = {
               id: payload.membership.id,
-              organizationId: payload.membership.organizationId,
-              userId: payload.membership.userId,
+              organizationId: payload.membership.organizationId ?? payload.membership.organization_id ?? '',
+              userId: payload.membership.userId ?? payload.membership.user_id ?? userId,
               role: payload.membership.role,
-              isActive: payload.membership.isActive,
-              createdAt: payload.membership.createdAt ?? '',
-              updatedAt: payload.membership.updatedAt ?? '',
+              isActive: payload.membership.isActive ?? payload.membership.is_active ?? true,
+              createdAt: payload.membership.createdAt ?? payload.membership.created_at ?? '',
+              updatedAt: payload.membership.updatedAt ?? payload.membership.updated_at ?? '',
             }
 
             const profile: Profile = {
               id: payload.profile?.id ?? userId,
               email: payload.profile?.email ?? email ?? null,
-              fullName: payload.profile?.fullName ?? null,
-              isActive: payload.profile?.isActive ?? true,
-              createdAt: payload.profile?.createdAt ?? '',
-              updatedAt: payload.profile?.updatedAt ?? '',
+              fullName: payload.profile?.fullName ?? payload.profile?.full_name ?? null,
+              isActive: payload.profile?.isActive ?? payload.profile?.is_active ?? true,
+              createdAt: payload.profile?.createdAt ?? payload.profile?.created_at ?? '',
+              updatedAt: payload.profile?.updatedAt ?? payload.profile?.updated_at ?? '',
             }
 
             console.log('[AuthDiagnostic] 5. Final Resolved Role:', membership.role)

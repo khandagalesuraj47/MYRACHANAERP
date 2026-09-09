@@ -18,31 +18,55 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = useCallback(async () => {
     await supabase.auth.signOut()
     setContext({ status: 'UNAUTHENTICATED' })
+    setLoading(false)
   }, [])
 
   useEffect(() => {
     let isMounted = true
 
-    AuthContextRepository.getCurrentUserContext().then((res) => {
-      if (isMounted) {
-        setContext(res)
-        setLoading(false)
-      }
-    })
+    // 1. Check existing session from localStorage first
+    supabase.auth.getSession().then(({ data: { session }, error: sessionError }) => {
+      if (!isMounted) return
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session) {
-        if (isMounted) {
-          setContext({ status: 'UNAUTHENTICATED' })
-          setLoading(false)
-        }
+      if (sessionError || !session) {
+        console.log('[AuthDiagnostic] Initial getSession: No active session found.')
+        setContext({ status: 'UNAUTHENTICATED' })
+        setLoading(false)
       } else {
+        console.log('[AuthDiagnostic] Initial getSession: Restoring session for user:', session.user.id)
         AuthContextRepository.getCurrentUserContext().then((res) => {
           if (isMounted) {
             setContext(res)
             setLoading(false)
           }
         })
+      }
+    }).catch((err) => {
+      console.error('[AuthDiagnostic] getSession caught error:', err)
+      if (isMounted) {
+        setContext({ status: 'UNAUTHENTICATED' })
+        setLoading(false)
+      }
+    })
+
+    // 2. Listen to subsequent auth events (token refresh, sign in, sign out)
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('[AuthDiagnostic] onAuthStateChange event:', event, 'user:', session?.user?.email)
+
+      if (event === 'SIGNED_OUT') {
+        if (isMounted) {
+          setContext({ status: 'UNAUTHENTICATED' })
+          setLoading(false)
+        }
+      } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+        if (session) {
+          AuthContextRepository.getCurrentUserContext().then((res) => {
+            if (isMounted) {
+              setContext(res)
+              setLoading(false)
+            }
+          })
+        }
       }
     })
 
@@ -58,4 +82,3 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     </AuthContext.Provider>
   )
 }
-
