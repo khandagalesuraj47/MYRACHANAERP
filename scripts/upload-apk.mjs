@@ -20,25 +20,45 @@ async function main() {
   const fileBuffer = fs.readFileSync(apkPath)
   console.log(`Uploading ${apkPath} (${(fileBuffer.length / 1024 / 1024).toFixed(2)} MB) to Supabase Storage...`)
 
-  const { error } = await supabase.storage
+  // 1. Upload as myrachana-erp-v1.0.2.apk (Visible versioned file in Supabase dashboard)
+  const { error: versionError } = await supabase.storage
+    .from('apk-releases')
+    .upload('myrachana-erp-v1.0.2.apk', fileBuffer, {
+      contentType: 'application/vnd.android.package-archive',
+      upsert: true,
+    })
+
+  if (versionError) {
+    console.error('Failed to upload myrachana-erp-v1.0.2.apk:', versionError.message)
+  } else {
+    console.log('✅ Uploaded: myrachana-erp-v1.0.2.apk')
+  }
+
+  // 2. Upload / overwrite as myrachana-erp.apk (Permanent latest download link)
+  const { error: latestError } = await supabase.storage
     .from('apk-releases')
     .upload('myrachana-erp.apk', fileBuffer, {
       contentType: 'application/vnd.android.package-archive',
       upsert: true,
     })
 
-  if (error) {
-    console.error('Failed to upload APK to Supabase Storage:', error.message)
-    console.log('\nNote: Run the SQL in supabase/migrations/20260909000005_storage_apk_bucket.sql in Supabase SQL editor first to provision the bucket.')
-    process.exit(1)
+  if (latestError) {
+    console.error('Failed to upload latest myrachana-erp.apk:', latestError.message)
+  } else {
+    console.log('✅ Uploaded: myrachana-erp.apk (Latest)')
   }
+
+  const { data: vData } = supabase.storage
+    .from('apk-releases')
+    .getPublicUrl('myrachana-erp-v1.0.2.apk')
 
   const { data: publicData } = supabase.storage
     .from('apk-releases')
     .getPublicUrl('myrachana-erp.apk')
 
-  console.log('\n✅ APK successfully uploaded to Supabase Storage!')
-  console.log('Public Download URL:', publicData.publicUrl)
+  console.log('\n🎉 Both releases are live in Supabase Storage!')
+  console.log('Version 1.0.2 URL:', vData.publicUrl)
+  console.log('Latest URL:', publicData.publicUrl)
 }
 
 main().catch(console.error)

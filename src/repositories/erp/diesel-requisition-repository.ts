@@ -1,4 +1,5 @@
 import { supabase } from '../../lib/supabase'
+import { StorageService } from '../../lib/storage-service'
 
 export interface DieselParty {
   id: string
@@ -449,38 +450,7 @@ export const DieselRequisitionRepository = {
     organizationId: string,
     requisitionNo: string
   ): Promise<{ url: string | null; error: string | null }> {
-    try {
-      const ext = file.name.split('.').pop() || 'jpg'
-      const fileName = `${organizationId}/${requisitionNo}_${Date.now()}.${ext}`
-
-      // Upload to public storage
-      const { error: uploadError } = await supabase.storage
-        .from('apk-releases')
-        .upload(`diesel-attachments/${fileName}`, file, {
-          cacheControl: '3600',
-          upsert: true,
-        })
-
-      if (uploadError) {
-        // Fallback: create base64 data URL for local display if storage bucket has restrictions
-        const reader = new FileReader()
-        return new Promise((resolve) => {
-          reader.onloadend = () => {
-            resolve({ url: reader.result as string, error: null })
-          }
-          reader.readAsDataURL(file)
-        })
-      }
-
-      const { data } = supabase.storage
-        .from('apk-releases')
-        .getPublicUrl(`diesel-attachments/${fileName}`)
-
-      return { url: data.publicUrl, error: null }
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to upload attachment'
-      return { url: null, error: msg }
-    }
+    return StorageService.uploadFile(file, 'diesel-attachments', `${organizationId}_${requisitionNo}`)
   },
 }
 

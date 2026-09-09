@@ -1,4 +1,5 @@
 import { supabase } from '../../lib/supabase'
+import { StorageService } from '../../lib/storage-service'
 
 export type AssetOwnershipType = 'COMPANY_OWNED' | 'CONTRACTOR_RENTAL'
 export type MeterReadingType = 'HOURS' | 'KILOMETERS'
@@ -654,34 +655,6 @@ export const AssetMasterRepository = {
     assetCode: string,
     docType: string
   ): Promise<{ url: string | null; error: string | null }> {
-    try {
-      const ext = file.name.split('.').pop() || 'jpg'
-      const cleanFileName = `asset-docs/${assetCode}_${docType}_${Date.now()}.${ext}`
-
-      const { error: uploadError } = await supabase.storage
-        .from('apk-releases')
-        .upload(cleanFileName, file, {
-          cacheControl: '3600',
-          upsert: true,
-        })
-
-      if (uploadError) {
-        const reader = new FileReader()
-        return new Promise((resolve) => {
-          reader.onloadend = () => {
-            resolve({ url: reader.result as string, error: null })
-          }
-          reader.readAsDataURL(file)
-        })
-      }
-
-      const { data } = supabase.storage
-        .from('apk-releases')
-        .getPublicUrl(cleanFileName)
-
-      return { url: data.publicUrl, error: null }
-    } catch (err: unknown) {
-      return { url: null, error: err instanceof Error ? err.message : 'Upload failed' }
-    }
+    return StorageService.uploadFile(file, 'asset-docs', `${assetCode}_${docType}`)
   },
 }

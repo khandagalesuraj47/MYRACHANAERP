@@ -1,4 +1,5 @@
 import { supabase } from '../../lib/supabase'
+import { StorageService } from '../../lib/storage-service'
 
 export type VendorType = 'PURCHASE_VENDOR' | 'CONTRACTOR_VENDOR'
 export type DocumentType = 'AADHAAR' | 'PAN' | 'GST' | 'CHEQUE' | 'CONTRACT' | 'OTHER'
@@ -517,36 +518,7 @@ export const VendorRepository = {
     vendorCode: string,
     docType: DocumentType
   ): Promise<{ url: string | null; error: string | null }> {
-    try {
-      const ext = file.name.split('.').pop() || 'pdf'
-      const cleanFileName = `vendor-docs/${vendorCode}_${docType}_${Date.now()}.${ext}`
-
-      const { error: uploadError } = await supabase.storage
-        .from('apk-releases')
-        .upload(cleanFileName, file, {
-          cacheControl: '3600',
-          upsert: true,
-        })
-
-      if (uploadError) {
-        // Fallback to data URL
-        const reader = new FileReader()
-        return new Promise((resolve) => {
-          reader.onloadend = () => {
-            resolve({ url: reader.result as string, error: null })
-          }
-          reader.readAsDataURL(file)
-        })
-      }
-
-      const { data } = supabase.storage
-        .from('apk-releases')
-        .getPublicUrl(cleanFileName)
-
-      return { url: data.publicUrl, error: null }
-    } catch (err: unknown) {
-      return { url: null, error: err instanceof Error ? err.message : 'Upload failed' }
-    }
+    return StorageService.uploadFile(file, 'vendor-docs', `${vendorCode}_${docType}`)
   },
 }
 
