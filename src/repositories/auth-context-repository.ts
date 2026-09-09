@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase'
 import type { Organization, Profile, OrganizationMember, UserRole } from '../types/foundation'
+import type { UserTaskAssignment } from '../types/rbac'
 
 export type UserResolutionStatus =
   | 'UNAUTHENTICATED'
@@ -16,7 +17,10 @@ export interface UserContextResult {
   profile?: Profile
   organization?: Organization
   membership?: OrganizationMember
-  role?: UserRole
+  role?: string
+  baseRole?: UserRole
+  permissions?: string[]
+  assignedTasks?: UserTaskAssignment[]
   errorMessage?: string
 }
 
@@ -25,9 +29,14 @@ interface RpcContextPayload {
   userId?: string
   user_id?: string
   email?: string
-  role?: UserRole
+  role?: string
+  baseRole?: UserRole
+  base_role?: UserRole
   errorMessage?: string
   error_message?: string
+  permissions?: string[]
+  assignedTasks?: UserTaskAssignment[]
+  assigned_tasks?: UserTaskAssignment[]
   profile?: {
     id: string
     email?: string | null
@@ -46,7 +55,14 @@ interface RpcContextPayload {
     organization_id?: string
     userId?: string
     user_id?: string
-    role: UserRole
+    role: string
+    baseRole?: UserRole
+    base_role?: UserRole
+    employeeCode?: string | null
+    designation?: string | null
+    phone?: string | null
+    departmentId?: string | null
+    siteId?: string | null
     isActive?: boolean
     is_active?: boolean
     createdAt?: string
@@ -69,7 +85,8 @@ interface RpcContextPayload {
 
 /**
  * Universal User Context Resolver
- * Resolves session, profile, active organization, and role from PostgreSQL & Supabase Auth.
+ * Resolves session, profile, active organization, role, permissions, and assigned tasks
+ * from PostgreSQL & Supabase Auth.
  * Zero hardcoded email addresses, UUIDs, or roles.
  */
 export class AuthContextRepository {
@@ -79,7 +96,11 @@ export class AuthContextRepository {
       const { data: authData, error: authError } = await supabase.auth.getUser()
       if (authError || !authData.user) {
         console.log('[AuthDiagnostic] 1. Authenticated User: None (Unauthenticated session)')
-        return { status: 'UNAUTHENTICATED' }
+        return {
+          status: 'UNAUTHENTICATED',
+          permissions: [],
+          assignedTasks: [],
+        }
       }
 
       const userId = authData.user.id
@@ -104,11 +125,15 @@ export class AuthContextRepository {
               updatedAt: payload.organization.updatedAt ?? payload.organization.updated_at ?? '',
             }
 
+            const rawRole = payload.role ?? payload.membership.role ?? 'USER'
+            const baseRole: UserRole =
+              payload.baseRole ?? payload.base_role ?? payload.membership.baseRole ?? payload.membership.base_role ?? (rawRole === 'MASTER_ADMIN' || rawRole === 'ADMIN' ? 'ADMIN' : 'USER')
+
             const membership: OrganizationMember = {
               id: payload.membership.id,
               organizationId: payload.membership.organizationId ?? payload.membership.organization_id ?? '',
               userId: payload.membership.userId ?? payload.membership.user_id ?? userId,
-              role: payload.membership.role,
+              role: baseRole,
               isActive: payload.membership.isActive ?? payload.membership.is_active ?? true,
               createdAt: payload.membership.createdAt ?? payload.membership.created_at ?? '',
               updatedAt: payload.membership.updatedAt ?? payload.membership.updated_at ?? '',
@@ -123,17 +148,24 @@ export class AuthContextRepository {
               updatedAt: payload.profile?.updatedAt ?? payload.profile?.updated_at ?? '',
             }
 
-            console.log('[AuthDiagnostic] 5. Final Resolved Role:', membership.role)
+            const permissions = payload.permissions ?? []
+            const assignedTasks = payload.assignedTasks ?? payload.assigned_tasks ?? []
+
+            console.log('[AuthDiagnostic] 5. Final Resolved Role:', rawRole, 'Base Role:', baseRole)
             console.log('[AuthDiagnostic] 6. Final Resolved Organization:', organization.name)
+            console.log('[AuthDiagnostic] 7. Permissions Count:', permissions.length, 'Tasks Count:', assignedTasks.length)
 
             return {
               status: 'SUCCESS',
               userId,
               email,
-              role: membership.role,
+              role: rawRole,
+              baseRole,
               profile,
               membership,
               organization,
+              permissions,
+              assignedTasks,
             }
           } else if (payload.status && payload.status !== 'SUCCESS') {
             console.warn('[AuthDiagnostic] RPC returned non-success status:', payload.status, payload.errorMessage)
@@ -141,7 +173,9 @@ export class AuthContextRepository {
               status: payload.status,
               userId,
               email,
-              errorMessage: payload.errorMessage,
+              permissions: [],
+              assignedTasks: [],
+              errorMessage: payload.errorMessage ?? payload.error_message,
             }
           }
         }
@@ -183,6 +217,8 @@ export class AuthContextRepository {
           userId,
           email,
           profile,
+          permissions: [],
+          assignedTasks: [],
           errorMessage: 'Your user profile has been deactivated. Please contact your organization administrator.',
         }
       }
@@ -205,6 +241,8 @@ export class AuthContextRepository {
           userId,
           email,
           profile,
+          permissions: [],
+          assignedTasks: [],
           errorMessage: `Database error querying organization membership: ${memberError.message} (${memberError.code || 'unknown'})`,
         }
       }
@@ -216,15 +254,20 @@ export class AuthContextRepository {
           userId,
           email,
           profile,
+          permissions: [],
+          assignedTasks: [],
           errorMessage: 'Your account is not assigned to an active organization. Please contact your administrator.',
         }
       }
+
+      const rawRole = memberData.role as string
+      const baseRole: UserRole = rawRole === 'ADMIN' ? 'ADMIN' : 'USER'
 
       const membership: OrganizationMember = {
         id: memberData.id,
         organizationId: memberData.organization_id,
         userId: memberData.user_id,
-        role: memberData.role as UserRole,
+        role: baseRole,
         isActive: memberData.is_active,
         createdAt: memberData.created_at,
         updatedAt: memberData.updated_at,
@@ -247,6 +290,8 @@ export class AuthContextRepository {
           email,
           profile,
           membership,
+          permissions: [],
+          assignedTasks: [],
           errorMessage: `Database error querying organization details: ${orgError.message} (${orgError.code || 'unknown'})`,
         }
       }
@@ -259,6 +304,8 @@ export class AuthContextRepository {
           email,
           profile,
           membership,
+          permissions: [],
+          assignedTasks: [],
           errorMessage: 'The organization assigned to your account could not be found.',
         }
       }
@@ -280,11 +327,66 @@ export class AuthContextRepository {
           profile,
           organization,
           membership,
+          permissions: [],
+          assignedTasks: [],
           errorMessage: 'Your organization account is currently inactive. Please contact support.',
         }
       }
 
-      console.log('[AuthDiagnostic] 5. Final Resolved Role:', membership.role)
+      // Step D: Try fetching user tasks if table exists
+      let assignedTasks: UserTaskAssignment[] = []
+      try {
+        const { data: tasksData } = await supabase
+          .from('user_task_assignments')
+          .select(`
+            task_type_id,
+            can_initiate,
+            can_execute,
+            can_approve,
+            task_types (
+              id,
+              code,
+              name,
+              module,
+              icon
+            )
+          `)
+          .eq('user_id', userId)
+          .eq('organization_id', organization.id)
+
+        if (tasksData && tasksData.length > 0) {
+          assignedTasks = tasksData
+            .filter((t: unknown) => (t as { task_types?: { code?: string } }).task_types?.code)
+            .map((t: unknown) => {
+              const item = t as {
+                task_type_id: string
+                can_initiate: boolean
+                can_execute: boolean
+                can_approve: boolean
+                task_types: {
+                  code: string
+                  name: string
+                  module: string
+                  icon?: string | null
+                }
+              }
+              return {
+                taskTypeId: item.task_type_id,
+                code: item.task_types.code,
+                name: item.task_types.name,
+                module: item.task_types.module,
+                icon: item.task_types.icon,
+                canInitiate: item.can_initiate,
+                canExecute: item.can_execute,
+                canApprove: item.can_approve,
+              }
+            })
+        }
+      } catch (tasksErr) {
+        console.debug('[AuthDiagnostic] user_task_assignments query skipped or failed:', tasksErr)
+      }
+
+      console.log('[AuthDiagnostic] 5. Final Resolved Role:', rawRole)
       console.log('[AuthDiagnostic] 6. Final Resolved Organization:', organization.name)
 
       return {
@@ -294,13 +396,18 @@ export class AuthContextRepository {
         profile,
         organization,
         membership,
-        role: membership.role,
+        role: rawRole,
+        baseRole,
+        permissions: [],
+        assignedTasks,
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to query user authorization.'
       console.error('[AuthDiagnostic] Unexpected error resolving user context:', err)
       return {
         status: 'ERROR',
+        permissions: [],
+        assignedTasks: [],
         errorMessage: msg,
       }
     }

@@ -41,9 +41,10 @@ interface NavSection {
 
 const NAV_SECTIONS: NavSection[] = [
   {
-    title: 'OVERVIEW',
+    title: 'COMMAND CENTER',
     items: [
-      { name: 'Dashboard', icon: LayoutDashboard, id: 'dashboard', active: true },
+      { name: 'Dashboard', icon: LayoutDashboard, id: 'dashboard' },
+      { name: 'People & Access', icon: Users, id: 'people' },
     ],
   },
   {
@@ -59,7 +60,7 @@ const NAV_SECTIONS: NavSection[] = [
       { name: 'Purchase', icon: ShoppingCart, id: 'purchase', badge: 'Soon' },
       { name: 'Vendors', icon: Building2, id: 'vendors', badge: 'Soon' },
       { name: 'Material', icon: Package, id: 'material', badge: 'Soon' },
-      { name: 'Workforce', icon: Users, id: 'workforce', badge: 'Soon' },
+      { name: 'Workforce', icon: UserCheck, id: 'workforce', badge: 'Soon' },
       { name: 'Daily Operations', icon: CalendarCheck, id: 'daily-operations', badge: 'Soon' },
     ],
   },
@@ -75,7 +76,7 @@ const NAV_SECTIONS: NavSection[] = [
   {
     title: 'ADMINISTRATION',
     items: [
-      { name: 'Users', icon: UserCheck, id: 'users', badge: 'Soon' },
+      { name: 'Personnel (TBAC)', icon: Users, id: 'people' },
       { name: 'Roles & Permissions', icon: ShieldAlert, id: 'roles', badge: 'Soon' },
       { name: 'Organization', icon: SlidersHorizontal, id: 'organization', badge: 'Soon' },
       { name: 'Audit Logs', icon: History, id: 'audit-logs', badge: 'Soon' },

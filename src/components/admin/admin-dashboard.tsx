@@ -4,6 +4,7 @@ import { AdminLayout } from './admin-layout'
 import { AdminHero } from './admin-hero'
 import { AdminKpiGrid } from './admin-kpi-grid'
 import { AdminSystemStatus } from './admin-system-status'
+import { PeopleDirectory } from './people/people-directory'
 import { AdminRepository, type OrganizationStats } from '../../repositories/admin/admin-repository'
 import { useAuth } from '../../context/auth-context'
 import { supabase } from '../../lib/supabase'
@@ -129,7 +130,13 @@ export function AdminDashboard() {
       onSignOut={handleSignOut}
       activeModule={activeModule}
       onSelectModule={setActiveModule}
-      pageTitle={activeModule === 'dashboard' ? 'Overview' : activeModule.toUpperCase()}
+      pageTitle={
+        activeModule === 'dashboard'
+          ? 'Overview'
+          : activeModule === 'people'
+          ? 'People & Access'
+          : activeModule.toUpperCase()
+      }
     >
       {activeModule === 'dashboard' ? (
         <>
@@ -154,6 +161,11 @@ export function AdminDashboard() {
             role={role}
           />
         </>
+      ) : activeModule === 'people' ? (
+        <PeopleDirectory
+          organizationId={organization.id}
+          organizationName={organization.name}
+        />
       ) : (
         /* Future ERP Modules Placeholder */
         <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-12 text-center space-y-4">

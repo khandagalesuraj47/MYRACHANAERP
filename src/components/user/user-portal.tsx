@@ -87,6 +87,55 @@ export function UserPortal({ context }: UserPortalProps) {
             </div>
           </div>
 
+          {/* TBAC: My Operational Responsibilities */}
+          <div className="space-y-3 pt-2">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-mono font-semibold uppercase tracking-wider text-emerald-400">
+                My Operational Tasks (TBAC)
+              </h3>
+              <span className="text-[11px] font-mono text-slate-400">
+                {context.assignedTasks?.length || 0} active
+              </span>
+            </div>
+
+            {context.assignedTasks && context.assignedTasks.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {context.assignedTasks.map((task) => (
+                  <div
+                    key={task.taskTypeId || task.code}
+                    className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/80 hover:border-blue-500/50 hover:bg-slate-900/60 transition-all space-y-1.5"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-xs text-white truncate">
+                        {task.name}
+                      </span>
+                      <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-blue-950/80 border border-blue-800/80 text-blue-300 uppercase">
+                        {task.module}
+                      </span>
+                    </div>
+                    <p className="text-[11px] font-mono text-slate-400">
+                      Code: {task.code}
+                    </p>
+                    <div className="flex items-center gap-2 pt-1 text-[10px] font-mono text-emerald-400">
+                      {task.canInitiate && <span>• Can Initiate</span>}
+                      {task.canExecute && <span>• Can Execute</span>}
+                      {task.canApprove && <span className="text-amber-400">• Can Approve</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-xl border border-slate-800/80 bg-slate-950/50 p-6 text-center space-y-1">
+                <p className="text-xs font-medium text-slate-300">
+                  No Operational Responsibilities Assigned
+                </p>
+                <p className="text-[11px] text-slate-500">
+                  Your administrator has not yet assigned any specific operational duties (e.g. Diesel Issue, Material Receipt). Please contact your site manager.
+                </p>
+              </div>
+            )}
+          </div>
+
           {/* Notice box */}
           <div className="p-3.5 rounded-lg bg-blue-950/30 border border-blue-900/40 text-blue-300 text-xs leading-relaxed">
             <span className="font-semibold">Standard User Portal Notice:</span>

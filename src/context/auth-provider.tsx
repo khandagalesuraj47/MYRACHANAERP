@@ -76,8 +76,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
+  const hasPermission = useCallback((permissionCode: string): boolean => {
+    if (!context || context.status !== 'SUCCESS') return false
+    if (context.role === 'MASTER_ADMIN' || context.role === 'ADMIN' || context.baseRole === 'ADMIN') {
+      return true
+    }
+    if (!context.permissions) return false
+    return context.permissions.includes('*') || context.permissions.includes(permissionCode)
+  }, [context])
+
+  const canExecuteTask = useCallback((taskCode: string): boolean => {
+    if (!context || context.status !== 'SUCCESS') return false
+    if (context.role === 'MASTER_ADMIN' || context.role === 'ADMIN' || context.baseRole === 'ADMIN') {
+      return true
+    }
+    if (!context.assignedTasks) return false
+    return context.assignedTasks.some(
+      t => t.code === taskCode && (t.canExecute || t.canInitiate)
+    )
+  }, [context])
+
   return (
-    <AuthContext.Provider value={{ context, loading, refreshContext, signOut }}>
+    <AuthContext.Provider value={{ context, loading, refreshContext, signOut, hasPermission, canExecuteTask }}>
       {children}
     </AuthContext.Provider>
   )

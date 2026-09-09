@@ -6,6 +6,8 @@ export interface AuthState {
   loading: boolean
   refreshContext: () => Promise<UserContextResult>
   signOut: () => Promise<void>
+  hasPermission: (permissionCode: string) => boolean
+  canExecuteTask: (taskCode: string) => boolean
 }
 
 export const AuthContext = createContext<AuthState | null>(null)
