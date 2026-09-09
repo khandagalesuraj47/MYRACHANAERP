@@ -8,6 +8,7 @@ import {
   ChevronRight,
   FolderKanban,
   Package,
+  Building2,
 } from 'lucide-react'
 
 interface NavItem {
@@ -37,6 +38,7 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { name: 'Item Master', icon: Package, id: 'item-master' },
       { name: 'Asset Master', icon: Cpu, id: 'asset-master' },
+      { name: 'Vendor Master', icon: Building2, id: 'vendor-master' },
       { name: 'Diesel Requisition', icon: Fuel, id: 'diesel-requisition' },
     ],
   },

@@ -1,5 +1,5 @@
 import React from 'react'
-import { Printer, X, Download, ShieldCheck, CheckCircle2 } from 'lucide-react'
+import { Printer, X } from 'lucide-react'
 import type { DieselRequisition } from '../../../repositories/erp/diesel-requisition-repository'
 
 interface DieselRequisitionPdfModalProps {

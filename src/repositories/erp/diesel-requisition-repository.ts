@@ -189,7 +189,7 @@ export const DieselRequisitionRepository = {
   /**
    * Generate next requisition number (e.g. VTR-REQ-2026-0001)
    */
-  async generateNextRequisitionNo(organizationId: string): Promise<string> {
+  async generateNextRequisitionNo(_organizationId?: string): Promise<string> {
     const year = new Date().getFullYear()
     const prefix = `VTR-DSL-${year}`
     const randomSuffix = Math.floor(1000 + Math.random() * 9000)

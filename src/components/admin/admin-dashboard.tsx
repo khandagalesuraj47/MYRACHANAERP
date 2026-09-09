@@ -16,6 +16,7 @@ import { PeopleDirectory } from './people/people-directory'
 import { ProjectsSitesView } from './operations/projects-sites-view'
 import { ItemMasterView } from './mechanical/item-master-view'
 import { AssetMasterView } from './mechanical/asset-master-view'
+import { VendorMasterView } from './mechanical/vendor-master-view'
 import { DieselRequisitionView } from './mechanical/diesel-requisition-view'
 import { ProjectsRepository } from '../../repositories/erp/projects-repository'
 import { AdminRepository, type OrganizationStats } from '../../repositories/admin/admin-repository'
@@ -100,6 +101,8 @@ export function AdminDashboard() {
           ? 'Item Master (Mechanical)'
           : activeModule === 'asset-master'
           ? 'Asset Master (Mechanical)'
+          : activeModule === 'vendor-master'
+          ? 'Vendor Master (Mechanical)'
           : activeModule === 'diesel-requisition'
           ? 'Diesel Requisition (Mechanical)'
           : 'Overview'
@@ -355,6 +358,11 @@ export function AdminDashboard() {
         />
       ) : activeModule === 'asset-master' ? (
         <AssetMasterView
+          organizationId={organization.id}
+          organizationName={organization.name}
+        />
+      ) : activeModule === 'vendor-master' ? (
+        <VendorMasterView
           organizationId={organization.id}
           organizationName={organization.name}
         />
