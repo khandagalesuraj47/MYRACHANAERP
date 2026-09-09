@@ -302,3 +302,4 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.material_items;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.material_transactions;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.purchase_orders;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.audit_logs;
+

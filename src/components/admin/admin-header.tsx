@@ -6,6 +6,7 @@ import {
   User,
   ShieldCheck,
   ChevronDown,
+  Download,
 } from 'lucide-react'
 import type { Profile, Organization } from '../../types/foundation'
 
@@ -56,6 +57,17 @@ export function AdminHeader({
           </span>
           <span>Live Sync</span>
         </div>
+
+        {/* Android APK Download Button */}
+        <a
+          href="/downloads/myrachana-erp.apk"
+          download="myrachana-erp.apk"
+          className="hidden sm:inline-flex items-center gap-1.5 rounded-lg border border-emerald-900/60 bg-emerald-950/40 hover:bg-emerald-900/40 px-2.5 py-1.5 text-xs font-mono font-medium text-emerald-400 hover:text-emerald-300 transition-colors cursor-pointer"
+          title="Download Android APK"
+        >
+          <Download className="h-3.5 w-3.5" />
+          <span>Download APK</span>
+        </a>
 
         {/* Notifications Icon (clean placeholder) */}
         <button

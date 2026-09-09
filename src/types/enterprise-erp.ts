@@ -149,3 +149,4 @@ export interface AuditLogEntry {
   details?: Record<string, unknown> | null
   createdAt: string
 }
+

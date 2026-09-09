@@ -351,3 +351,4 @@ export function ProcurementView({ organizationId }: ProcurementViewProps) {
     </div>
   )
 }
+
