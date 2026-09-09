@@ -3,12 +3,7 @@ import {
   LayoutDashboard,
   Cpu,
   Fuel,
-  Boxes,
-  ShoppingCart,
   Users,
-  ShieldAlert,
-  SlidersHorizontal,
-  History,
   ChevronLeft,
   ChevronRight,
   FolderKanban,
@@ -43,23 +38,6 @@ const NAV_SECTIONS: NavSection[] = [
       { name: 'Item Master', icon: Package, id: 'item-master' },
       { name: 'Asset Master', icon: Cpu, id: 'asset-master' },
       { name: 'Diesel Requisition', icon: Fuel, id: 'diesel-requisition' },
-    ],
-  },
-  {
-    title: 'OPERATIONS',
-    items: [
-      { name: 'Fuel & Diesel Logs', icon: Fuel, id: 'fuel' },
-      { name: 'Machines & Equipment', icon: Cpu, id: 'fleet' },
-      { name: 'Inventory & Materials', icon: Boxes, id: 'inventory' },
-      { name: 'Purchase & POs', icon: ShoppingCart, id: 'purchase' },
-    ],
-  },
-  {
-    title: 'GOVERNANCE & CONFIG',
-    items: [
-      { name: 'Dynamic Forms', icon: SlidersHorizontal, id: 'forms' },
-      { name: 'Approval Workflows', icon: ShieldAlert, id: 'workflows' },
-      { name: 'Audit Logs', icon: History, id: 'audit-logs' },
     ],
   },
 ]
