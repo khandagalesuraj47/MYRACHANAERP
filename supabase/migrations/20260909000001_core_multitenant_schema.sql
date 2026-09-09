@@ -84,35 +84,38 @@ CREATE TRIGGER trg_org_members_updated_at
     FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 
 -- ==============================================================================
--- 4. HELPER SECURITY FUNCTIONS FOR RLS (Non-recursive, secure search_path)
+-- 4. HELPER SECURITY FUNCTIONS FOR RLS (PL/pgSQL to avoid AST inlining recursion)
 -- ==============================================================================
 
 -- Check if current user is an active member of the given organization
 CREATE OR REPLACE FUNCTION public.is_member_of(org_id UUID)
 RETURNS BOOLEAN
-LANGUAGE sql
+LANGUAGE plpgsql
 STABLE
 SECURITY DEFINER
 SET search_path = public
 AS $$
-    SELECT EXISTS (
+BEGIN
+    RETURN EXISTS (
         SELECT 1
         FROM public.organization_members
         WHERE organization_id = org_id
           AND user_id = auth.uid()
           AND is_active = true
     );
+END;
 $$;
 
 -- Check if current user is an active ADMIN in the given organization
 CREATE OR REPLACE FUNCTION public.is_org_admin(org_id UUID)
 RETURNS BOOLEAN
-LANGUAGE sql
+LANGUAGE plpgsql
 STABLE
 SECURITY DEFINER
 SET search_path = public
 AS $$
-    SELECT EXISTS (
+BEGIN
+    RETURN EXISTS (
         SELECT 1
         FROM public.organization_members
         WHERE organization_id = org_id
@@ -120,20 +123,24 @@ AS $$
           AND role = 'ADMIN'
           AND is_active = true
     );
+END;
 $$;
 
 -- Get all active organization IDs for current authenticated user
 CREATE OR REPLACE FUNCTION public.get_user_org_ids()
 RETURNS SETOF UUID
-LANGUAGE sql
+LANGUAGE plpgsql
 STABLE
 SECURITY DEFINER
 SET search_path = public
 AS $$
+BEGIN
+    RETURN QUERY
     SELECT organization_id
     FROM public.organization_members
     WHERE user_id = auth.uid()
       AND is_active = true;
+END;
 $$;
 
 -- ==============================================================================
@@ -195,7 +202,20 @@ CREATE POLICY "Users can update own profile"
 
 -- 5.4 Organization Members Policies
 DROP POLICY IF EXISTS "Users can view memberships in their organizations" ON public.organization_members;
-CREATE POLICY "Users can view memberships in their organizations"
+DROP POLICY IF EXISTS "Users can view own membership" ON public.organization_members;
+DROP POLICY IF EXISTS "Users can view same organization memberships" ON public.organization_members;
+
+-- Direct non-recursive check: Users can ALWAYS view their own membership rows
+CREATE POLICY "Users can view own membership"
+    ON public.organization_members
+    FOR SELECT
+    TO authenticated
+    USING (
+        user_id = auth.uid()
+    );
+
+-- Members can view other memberships in their active organization
+CREATE POLICY "Users can view same organization memberships"
     ON public.organization_members
     FOR SELECT
     TO authenticated

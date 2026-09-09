@@ -20,6 +20,39 @@ export interface UserContextResult {
   errorMessage?: string
 }
 
+interface RpcContextPayload {
+  status: UserResolutionStatus
+  userId?: string
+  email?: string
+  role?: UserRole
+  errorMessage?: string
+  profile?: {
+    id: string
+    email: string | null
+    fullName: string | null
+    isActive: boolean
+    createdAt?: string
+    updatedAt?: string
+  }
+  membership?: {
+    id: string
+    organizationId: string
+    userId: string
+    role: UserRole
+    isActive: boolean
+    createdAt?: string
+    updatedAt?: string
+  }
+  organization?: {
+    id: string
+    name: string
+    slug: string
+    isActive: boolean
+    createdAt?: string
+    updatedAt?: string
+  }
+}
+
 /**
  * Universal User Context Resolver
  * Resolves session, profile, active organization, and role from PostgreSQL & Supabase Auth.
@@ -28,20 +61,89 @@ export interface UserContextResult {
 export class AuthContextRepository {
   static async getCurrentUserContext(): Promise<UserContextResult> {
     try {
+      // 1. Authenticate user session
       const { data: authData, error: authError } = await supabase.auth.getUser()
       if (authError || !authData.user) {
+        console.log('[AuthDiagnostic] 1. Authenticated User: None (Unauthenticated session)')
         return { status: 'UNAUTHENTICATED' }
       }
 
       const userId = authData.user.id
       const email = authData.user.email ?? undefined
 
-      // 1. Fetch profile
-      const { data: profileData } = await supabase
+      console.log('[AuthDiagnostic] 1. Authenticated User:', { id: userId, email })
+
+      // 2. High-performance attempt: Try server-side atomic RPC if available
+      try {
+        const { data: rpcData, error: rpcError } = await supabase.rpc('get_current_user_context')
+        if (!rpcError && rpcData) {
+          const payload = rpcData as unknown as RpcContextPayload
+          console.log('[AuthDiagnostic] Atomic RPC Resolution:', payload)
+
+          if (payload.status === 'SUCCESS' && payload.organization && payload.membership) {
+            const organization: Organization = {
+              id: payload.organization.id,
+              name: payload.organization.name,
+              slug: payload.organization.slug,
+              isActive: payload.organization.isActive,
+              createdAt: payload.organization.createdAt ?? '',
+              updatedAt: payload.organization.updatedAt ?? '',
+            }
+
+            const membership: OrganizationMember = {
+              id: payload.membership.id,
+              organizationId: payload.membership.organizationId,
+              userId: payload.membership.userId,
+              role: payload.membership.role,
+              isActive: payload.membership.isActive,
+              createdAt: payload.membership.createdAt ?? '',
+              updatedAt: payload.membership.updatedAt ?? '',
+            }
+
+            const profile: Profile = {
+              id: payload.profile?.id ?? userId,
+              email: payload.profile?.email ?? email ?? null,
+              fullName: payload.profile?.fullName ?? null,
+              isActive: payload.profile?.isActive ?? true,
+              createdAt: payload.profile?.createdAt ?? '',
+              updatedAt: payload.profile?.updatedAt ?? '',
+            }
+
+            console.log('[AuthDiagnostic] 5. Final Resolved Role:', membership.role)
+            console.log('[AuthDiagnostic] 6. Final Resolved Organization:', organization.name)
+
+            return {
+              status: 'SUCCESS',
+              userId,
+              email,
+              role: membership.role,
+              profile,
+              membership,
+              organization,
+            }
+          } else if (payload.status && payload.status !== 'SUCCESS') {
+            console.warn('[AuthDiagnostic] RPC returned non-success status:', payload.status, payload.errorMessage)
+            return {
+              status: payload.status,
+              userId,
+              email,
+              errorMessage: payload.errorMessage,
+            }
+          }
+        }
+      } catch (rpcErr) {
+        console.debug('[AuthDiagnostic] RPC not available or failed, falling back to direct table queries:', rpcErr)
+      }
+
+      // 3. Fallback: Sequential RLS direct table queries
+      // Step A: Fetch profile
+      const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('id, email, full_name, is_active, created_at, updated_at')
         .eq('id', userId)
         .maybeSingle()
+
+      console.log('[AuthDiagnostic] 2. Profile Result:', { data: profileData, error: profileError })
 
       const profile: Profile = profileData
         ? {
@@ -71,7 +173,7 @@ export class AuthContextRepository {
         }
       }
 
-      // 2. Fetch active membership in organization_members
+      // Step B: Fetch active membership in organization_members
       const { data: memberData, error: memberError } = await supabase
         .from('organization_members')
         .select('id, organization_id, user_id, role, is_active, created_at, updated_at')
@@ -80,7 +182,21 @@ export class AuthContextRepository {
         .limit(1)
         .maybeSingle()
 
-      if (memberError || !memberData) {
+      console.log('[AuthDiagnostic] 3. Membership Result:', { data: memberData, error: memberError })
+
+      if (memberError) {
+        console.error('[AuthDiagnostic] Database error querying organization_members:', memberError)
+        return {
+          status: 'ERROR',
+          userId,
+          email,
+          profile,
+          errorMessage: `Database error querying organization membership: ${memberError.message} (${memberError.code || 'unknown'})`,
+        }
+      }
+
+      if (!memberData) {
+        console.warn('[AuthDiagnostic] No active organization membership row found for user ID:', userId)
         return {
           status: 'NO_MEMBERSHIP',
           userId,
@@ -100,14 +216,29 @@ export class AuthContextRepository {
         updatedAt: memberData.updated_at,
       }
 
-      // 3. Fetch Organization
+      // Step C: Fetch Organization details
       const { data: orgData, error: orgError } = await supabase
         .from('organizations')
         .select('id, name, slug, is_active, created_at, updated_at')
         .eq('id', membership.organizationId)
         .maybeSingle()
 
-      if (orgError || !orgData) {
+      console.log('[AuthDiagnostic] 4. Organization Result:', { data: orgData, error: orgError })
+
+      if (orgError) {
+        console.error('[AuthDiagnostic] Database error querying organizations:', orgError)
+        return {
+          status: 'ERROR',
+          userId,
+          email,
+          profile,
+          membership,
+          errorMessage: `Database error querying organization details: ${orgError.message} (${orgError.code || 'unknown'})`,
+        }
+      }
+
+      if (!orgData) {
+        console.warn('[AuthDiagnostic] Organization record not found for ID:', membership.organizationId)
         return {
           status: 'NO_MEMBERSHIP',
           userId,
@@ -139,6 +270,9 @@ export class AuthContextRepository {
         }
       }
 
+      console.log('[AuthDiagnostic] 5. Final Resolved Role:', membership.role)
+      console.log('[AuthDiagnostic] 6. Final Resolved Organization:', organization.name)
+
       return {
         status: 'SUCCESS',
         userId,
@@ -150,6 +284,7 @@ export class AuthContextRepository {
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to query user authorization.'
+      console.error('[AuthDiagnostic] Unexpected error resolving user context:', err)
       return {
         status: 'ERROR',
         errorMessage: msg,

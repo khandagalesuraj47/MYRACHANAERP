@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { SignInPage } from './components/ui/sign-in-page'
 import { ResetPasswordPage } from './components/ui/reset-password-page'
@@ -18,40 +18,65 @@ function WorkspaceLoadingScreen({ message = 'Loading your workspace...' }: { mes
 
 function NoOrganizationAccessScreen({
   message = 'Your account is not assigned to an active organization. Please contact your administrator.',
+  status = 'NO_MEMBERSHIP',
 }: {
   message?: string
+  status?: string
 }) {
-  const { signOut } = useAuth()
+  const { signOut, refreshContext } = useAuth()
   const navigate = useNavigate()
+  const [retrying, setRetrying] = useState(false)
 
   const handleSignOut = async () => {
     await signOut()
     navigate('/login', { replace: true })
   }
 
+  const handleRetry = async () => {
+    setRetrying(true)
+    await refreshContext()
+    setRetrying(false)
+  }
+
+  const isError = status === 'ERROR'
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-6 font-sans antialiased select-none">
       <div className="w-full max-w-md rounded-2xl border border-rose-900/40 bg-slate-900/90 p-8 shadow-2xl space-y-6 text-left">
         <div className="space-y-2">
           <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-rose-950/80 border border-rose-800/80 text-rose-400 font-mono text-xs font-bold uppercase tracking-wider">
-            Access Restricted
+            {isError ? 'Verification Error' : 'Access Restricted'}
           </div>
-          <h1 className="text-xl font-bold text-white tracking-tight">Organization Membership Required</h1>
+          <h1 className="text-xl font-bold text-white tracking-tight">
+            {isError ? 'Database Query Error' : 'Organization Membership Required'}
+          </h1>
           <p className="text-xs text-slate-300 leading-relaxed font-sans">
             {message}
           </p>
         </div>
 
         <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs font-mono text-slate-400 space-y-1">
-          <div>Status: <span className="text-rose-400 font-semibold">Unassigned / Inactive</span></div>
-          <div className="text-[11px] text-slate-500">To gain access to your company workspace, please contact your organization system administrator to assign you an active role.</div>
+          <div>Status: <span className="text-rose-400 font-semibold">{isError ? 'Database Error' : 'Unassigned / Inactive'}</span></div>
+          <div className="text-[11px] text-slate-500">
+            {isError
+              ? 'A PostgreSQL / RLS verification error occurred. Check browser console diagnostics or verify database policies.'
+              : 'To gain access to your company workspace, please contact your organization system administrator to assign you an active role.'}
+          </div>
         </div>
 
-        <div className="pt-2">
+        <div className="flex items-center gap-3 pt-2">
+          <button
+            type="button"
+            onClick={handleRetry}
+            disabled={retrying}
+            className="flex-1 py-2.5 px-4 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-medium text-xs transition-colors cursor-pointer text-center"
+          >
+            {retrying ? 'Re-verifying...' : 'Retry'}
+          </button>
           <button
             type="button"
             onClick={handleSignOut}
-            className="w-full py-2.5 px-4 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-medium text-xs transition-colors cursor-pointer"
+            className="flex-1 py-2.5 px-4 rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-750 text-slate-300 font-medium text-xs transition-colors cursor-pointer text-center"
           >
             Sign Out
           </button>
@@ -79,7 +104,7 @@ function RootDispatcher() {
     return <Navigate to="/app" replace />
   }
 
-  return <NoOrganizationAccessScreen message={context.errorMessage} />
+  return <NoOrganizationAccessScreen message={context.errorMessage} status={context.status} />
 }
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
@@ -101,7 +126,7 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/app" replace />
   }
 
-  return <NoOrganizationAccessScreen message={context.errorMessage} />
+  return <NoOrganizationAccessScreen message={context.errorMessage} status={context.status} />
 }
 
 function UserRoute() {
@@ -123,7 +148,7 @@ function UserRoute() {
     return <UserPortal context={context} />
   }
 
-  return <NoOrganizationAccessScreen message={context.errorMessage} />
+  return <NoOrganizationAccessScreen message={context.errorMessage} status={context.status} />
 }
 
 function LoginPageWrapper() {
