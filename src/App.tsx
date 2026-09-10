@@ -12,9 +12,9 @@ import { supabase } from './lib/supabase'
 
 function WorkspaceLoadingScreen({ message = 'Loading your workspace...' }: { message?: string }) {
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-400 font-mono text-xs gap-3">
-      <div className="w-8 h-8 rounded-full border-2 border-blue-500/20 border-t-blue-500 animate-spin" />
-      <p className="text-slate-300 font-medium">{message}</p>
+    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center text-slate-500 font-sans text-xs gap-3">
+      <div className="w-8 h-8 rounded-full border-2 border-blue-600/20 border-t-blue-600 animate-spin" />
+      <p className="text-slate-700 font-semibold">{message}</p>
     </div>
   )
 }
@@ -71,36 +71,36 @@ function NoOrganizationAccessScreen({
   const isPending = status === 'USER_INACTIVE'
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-6 font-sans antialiased select-none">
-      <div className={`w-full max-w-md rounded-2xl border p-8 shadow-2xl space-y-6 text-left ${
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex items-center justify-center p-6 font-sans antialiased select-none">
+      <div className={`w-full max-w-md rounded-2xl border p-8 shadow-xl space-y-6 text-left ${
         isPending
-          ? 'border-amber-700/50 bg-slate-900/90'
+          ? 'border-amber-200 bg-white'
           : isError
-          ? 'border-rose-900/40 bg-slate-900/90'
-          : 'border-slate-800 bg-slate-900/90'
+          ? 'border-rose-200 bg-white'
+          : 'border-slate-200 bg-white'
       }`}>
         <div className="space-y-2">
           <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded font-mono text-xs font-bold uppercase tracking-wider ${
             isPending
-              ? 'bg-amber-950/80 border border-amber-800/80 text-amber-400'
+              ? 'bg-amber-50 border border-amber-200 text-amber-800'
               : isError
-              ? 'bg-rose-950/80 border border-rose-800/80 text-rose-400'
-              : 'bg-slate-800 border border-slate-700 text-slate-300'
+              ? 'bg-rose-50 border border-rose-200 text-rose-800'
+              : 'bg-slate-100 border border-slate-200 text-slate-700'
           }`}>
             {isPending ? 'Pending Admin Approval' : isError ? 'Verification Error' : 'Access Restricted'}
           </div>
-          <h1 className="text-xl font-bold text-white tracking-tight">
+          <h1 className="text-xl font-bold text-slate-900 tracking-tight">
             {isPending ? 'Approval & Site Lock Required' : isError ? 'Database Query Error' : 'Organization Membership Required'}
           </h1>
-          <p className="text-xs text-slate-300 leading-relaxed font-sans">
+          <p className="text-xs text-slate-600 leading-relaxed font-sans">
             {message}
           </p>
         </div>
 
-        <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs font-mono text-slate-400 space-y-1">
+        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 space-y-1">
           <div>
             Status:{' '}
-            <span className={isPending ? 'text-amber-400 font-semibold' : 'text-rose-400 font-semibold'}>
+            <span className={isPending ? 'text-amber-700 font-bold' : 'text-rose-700 font-bold'}>
               {isPending ? 'Pending Admin Authorization' : isError ? 'Database Error' : 'Unassigned / Inactive'}
             </span>
           </div>
@@ -118,14 +118,14 @@ function NoOrganizationAccessScreen({
             type="button"
             onClick={handleRetry}
             disabled={retrying}
-            className="flex-1 py-2.5 px-4 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-medium text-xs transition-colors cursor-pointer text-center"
+            className="flex-1 py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold text-xs transition-colors cursor-pointer text-center shadow-xs"
           >
             {retrying ? 'Re-verifying...' : 'Retry'}
           </button>
           <button
             type="button"
             onClick={handleSignOut}
-            className="flex-1 py-2.5 px-4 rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-750 text-slate-300 font-medium text-xs transition-colors cursor-pointer text-center"
+            className="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 font-semibold text-xs transition-colors cursor-pointer text-center shadow-2xs"
           >
             Sign Out
           </button>
