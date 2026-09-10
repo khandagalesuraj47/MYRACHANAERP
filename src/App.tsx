@@ -9,6 +9,8 @@ import { useAuth } from './context/auth-context'
 import { MandatoryPasswordChangeModal } from './components/ui/mandatory-password-change-modal'
 import { AppUpdateBanner } from './components/common/app-update-banner'
 import { supabase } from './lib/supabase'
+import { App as CapApp } from '@capacitor/app'
+import { Capacitor } from '@capacitor/core'
 
 function WorkspaceLoadingScreen({ message = 'Loading your workspace...' }: { message?: string }) {
   return (
@@ -263,9 +265,50 @@ function MandatoryPasswordGuard() {
   )
 }
 
+function NativeBackButtonHandler() {
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return
+
+    const listenerPromise = CapApp.addListener('backButton', ({ canGoBack }) => {
+      // 1. Dispatch custom event for any open modal/sheet to intercept and close itself
+      const customEvent = new CustomEvent('nativeHardwareBack', { cancelable: true })
+      const wasPrevented = !window.dispatchEvent(customEvent)
+      if (wasPrevented) return
+
+      // 2. Check if a standard close button is visible
+      const activeCloseBtn = document.querySelector<HTMLButtonElement>(
+        '[data-dialog-close], [aria-label="Close"], [data-sheet-close]'
+      )
+      if (activeCloseBtn && activeCloseBtn.offsetParent !== null) {
+        activeCloseBtn.click()
+        return
+      }
+
+      // 3. Navigation hierarchy or App Exit
+      const currentPath = window.location.pathname
+      if (currentPath === '/login' || currentPath === '/' || currentPath === '/admin' || currentPath === '/app') {
+        CapApp.exitApp()
+      } else if (canGoBack) {
+        navigate(-1)
+      } else {
+        CapApp.exitApp()
+      }
+    })
+
+    return () => {
+      listenerPromise.then((l) => l.remove())
+    }
+  }, [navigate])
+
+  return null
+}
+
 export function App() {
   return (
     <BrowserRouter>
+      <NativeBackButtonHandler />
       <AuthProvider>
         <MandatoryPasswordGuard />
         <AppUpdateBanner />

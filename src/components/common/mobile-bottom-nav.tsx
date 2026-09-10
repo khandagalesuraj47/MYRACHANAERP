@@ -63,7 +63,7 @@ export function MobileBottomNav({
   return (
     <nav
       aria-label="Mobile Navigation Bar"
-      className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-950/95 border-t border-slate-800/80 backdrop-blur-xl pb-[max(env(safe-area-inset-bottom,0px),6px)] pt-1.5 px-3 select-none transition-all"
+      className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 border-t border-slate-200 backdrop-blur-md pb-[max(env(safe-area-inset-bottom,0px),8px)] pt-1.5 px-3 select-none shadow-lg transition-all"
     >
       <div className="flex items-center justify-around max-w-lg mx-auto">
         {tabs.map((tab) => {
@@ -86,8 +86,8 @@ export function MobileBottomNav({
               <div
                 className={`relative flex items-center justify-center px-4 py-1 rounded-full transition-all duration-200 ${
                   isActive
-                    ? 'bg-blue-600/25 text-blue-400'
-                    : 'text-slate-400 group-hover:text-slate-200 group-active:scale-95'
+                    ? 'bg-blue-50 text-blue-600 border border-blue-200/80 shadow-2xs'
+                    : 'text-slate-400 hover:text-slate-600 group-active:scale-95'
                 }`}
               >
                 <Icon
@@ -98,7 +98,7 @@ export function MobileBottomNav({
 
                 {/* Badge Notification */}
                 {tab.badge && tab.badge > 0 ? (
-                  <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold font-mono text-slate-950 shadow-sm animate-pulse">
+                  <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold font-mono text-white shadow-xs animate-pulse">
                     {tab.badge > 99 ? '99+' : tab.badge}
                   </span>
                 ) : null}
@@ -106,8 +106,8 @@ export function MobileBottomNav({
 
               {/* Label */}
               <span
-                className={`text-[10px] font-medium tracking-tight mt-0.5 transition-colors ${
-                  isActive ? 'text-blue-400 font-bold' : 'text-slate-400'
+                className={`text-[10px] tracking-tight mt-0.5 transition-colors ${
+                  isActive ? 'text-blue-700 font-bold' : 'text-slate-500 font-medium'
                 }`}
               >
                 {tab.label}

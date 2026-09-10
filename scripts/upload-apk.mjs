@@ -20,18 +20,18 @@ async function main() {
   const fileBuffer = fs.readFileSync(apkPath)
   console.log(`Uploading ${apkPath} (${(fileBuffer.length / 1024 / 1024).toFixed(2)} MB) to Supabase Storage...`)
 
-  // 1. Upload as myrachana-erp-v1.0.9.apk (Visible versioned file in Supabase dashboard)
+  // 1. Upload as myrachana-erp-v1.1.0.apk (Visible versioned file in Supabase dashboard)
   const { error: versionError } = await supabase.storage
     .from('apk-releases')
-    .upload('myrachana-erp-v1.0.9.apk', fileBuffer, {
+    .upload('myrachana-erp-v1.1.0.apk', fileBuffer, {
       contentType: 'application/vnd.android.package-archive',
       upsert: true,
     })
 
   if (versionError) {
-    console.error('Failed to upload myrachana-erp-v1.0.9.apk:', versionError.message)
+    console.error('Failed to upload myrachana-erp-v1.1.0.apk:', versionError.message)
   } else {
-    console.log('✅ Uploaded: myrachana-erp-v1.0.9.apk')
+    console.log('✅ Uploaded: myrachana-erp-v1.1.0.apk')
   }
 
   // 2. Upload / overwrite as myrachana-erp.apk (Permanent latest download link)
@@ -50,7 +50,7 @@ async function main() {
 
   const { data: vData } = supabase.storage
     .from('apk-releases')
-    .getPublicUrl('myrachana-erp-v1.0.9.apk')
+    .getPublicUrl('myrachana-erp-v1.1.0.apk')
 
   const { data: publicData } = supabase.storage
     .from('apk-releases')
@@ -62,10 +62,10 @@ async function main() {
       .from('app_releases')
       .upsert(
         {
-          version_code: 9,
-          version_name: '1.0.9',
+          version_code: 10,
+          version_name: '1.1.0',
           apk_url: publicData.publicUrl,
-          release_notes: 'Real-time task sub-permissions (Initiate, Execute, Approval), Jio-style mobile clean light theme, diesel requisition UI & layout polish.',
+          release_notes: 'MY RACHANA ERP 2.0: Android hardware back button handler, adaptive Personnel Cards for phones, mobile bottom sheet modals, Floating Action Buttons, safe area insets & dense enterprise theme.',
           is_critical: false,
           published_at: new Date().toISOString(),
         },
@@ -74,14 +74,14 @@ async function main() {
     if (dbError) {
       console.warn('Notice: app_releases table update note:', dbError.message)
     } else {
-      console.log('✅ Registered v1.0.9 in app_releases database table')
+      console.log('✅ Registered v1.1.0 in app_releases database table')
     }
   } catch (e) {
     console.warn('app_releases table insert exception:', e.message)
   }
 
   console.log('\n🎉 Both releases are live in Supabase Storage!')
-  console.log('Version 1.0.9 URL:', vData.publicUrl)
+  console.log('Version 1.1.0 URL:', vData.publicUrl)
   console.log('Latest Permanent URL:', publicData.publicUrl)
 }
 

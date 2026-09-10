@@ -24,6 +24,7 @@ import {
 import { DieselRequisitionPdfModal } from './diesel-requisition-pdf-modal'
 import { useAuth } from '../../../context/auth-context'
 import { supabase } from '../../../lib/supabase'
+import { FloatingActionButton } from '../../ui/floating-action-button'
 
 interface DieselRequisitionViewProps {
   organizationId: string
@@ -830,8 +831,12 @@ export function DieselRequisitionView({
       {/* MODAL 1: CREATE DIESEL REQUISITION (Field In-Charge) */}
       {/* ========================================================================= */}
       {isCreateModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs overflow-y-auto">
-          <div className="w-full max-w-lg rounded-2xl bg-white border border-slate-200 shadow-2xl p-6 space-y-4 my-8 animate-in fade-in zoom-in-95 text-left">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/40 backdrop-blur-xs overflow-y-auto">
+          <div className="w-full max-w-lg rounded-t-[28px] sm:rounded-2xl bg-white border-t sm:border border-slate-200 shadow-2xl p-5 sm:p-6 space-y-4 my-0 sm:my-8 animate-in slide-in-from-bottom sm:slide-in-from-bottom-0 sm:zoom-in-95 text-left max-h-[92dvh] overflow-y-auto pb-[max(env(safe-area-inset-bottom,0px),20px)]">
+            {/* Android Drag Handle (Mobile only) */}
+            <div className="sm:hidden flex justify-center pt-1 pb-2">
+              <div className="h-1.5 w-12 rounded-full bg-slate-200" />
+            </div>
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
                 <Fuel className="h-5 w-5 text-orange-600" />
@@ -968,8 +973,12 @@ export function DieselRequisitionView({
       {/* MODAL 2: VERIFY & ASSIGN PARTY (Data Operator / Scrutiny) */}
       {/* ========================================================================= */}
       {isVerifyModalOpen && activeRequisition && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs overflow-y-auto">
-          <div className="w-full max-w-lg rounded-2xl bg-white border border-slate-200 shadow-2xl p-6 space-y-4 my-8 animate-in fade-in zoom-in-95 text-left">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/40 backdrop-blur-xs overflow-y-auto">
+          <div className="w-full max-w-lg rounded-t-[28px] sm:rounded-2xl bg-white border-t sm:border border-slate-200 shadow-2xl p-5 sm:p-6 space-y-4 my-0 sm:my-8 animate-in slide-in-from-bottom sm:slide-in-from-bottom-0 sm:zoom-in-95 text-left max-h-[92dvh] overflow-y-auto pb-[max(env(safe-area-inset-bottom,0px),20px)]">
+            {/* Android Drag Handle (Mobile only) */}
+            <div className="sm:hidden flex justify-center pt-1 pb-2">
+              <div className="h-1.5 w-12 rounded-full bg-slate-200" />
+            </div>
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
                 <Building className="h-5 w-5 text-blue-600" />
@@ -1072,8 +1081,12 @@ export function DieselRequisitionView({
       {/* MODAL 3: GENERAL MANAGER FINAL APPROVAL */}
       {/* ========================================================================= */}
       {isApproveModalOpen && activeRequisition && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs overflow-y-auto">
-          <div className="w-full max-w-lg rounded-2xl bg-white border border-slate-200 shadow-2xl p-6 space-y-4 my-8 animate-in fade-in zoom-in-95 text-left">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/40 backdrop-blur-xs overflow-y-auto">
+          <div className="w-full max-w-lg rounded-t-[28px] sm:rounded-2xl bg-white border-t sm:border border-slate-200 shadow-2xl p-5 sm:p-6 space-y-4 my-0 sm:my-8 animate-in slide-in-from-bottom sm:slide-in-from-bottom-0 sm:zoom-in-95 text-left max-h-[92dvh] overflow-y-auto pb-[max(env(safe-area-inset-bottom,0px),20px)]">
+            {/* Android Drag Handle (Mobile only) */}
+            <div className="sm:hidden flex justify-center pt-1 pb-2">
+              <div className="h-1.5 w-12 rounded-full bg-slate-200" />
+            </div>
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="h-5 w-5 text-emerald-600" />
@@ -1184,8 +1197,12 @@ export function DieselRequisitionView({
       {/* MODAL 4: EDIT REQUISITION */}
       {/* ========================================================================= */}
       {isEditModalOpen && activeRequisition && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs overflow-y-auto">
-          <div className="w-full max-w-md rounded-2xl bg-white border border-slate-200 shadow-2xl p-6 space-y-4 my-8 animate-in fade-in zoom-in-95 text-left">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/40 backdrop-blur-xs overflow-y-auto">
+          <div className="w-full max-w-md rounded-t-[28px] sm:rounded-2xl bg-white border-t sm:border border-slate-200 shadow-2xl p-5 sm:p-6 space-y-4 my-0 sm:my-8 animate-in slide-in-from-bottom sm:slide-in-from-bottom-0 sm:zoom-in-95 text-left max-h-[92dvh] overflow-y-auto pb-[max(env(safe-area-inset-bottom,0px),20px)]">
+            {/* Android Drag Handle (Mobile only) */}
+            <div className="sm:hidden flex justify-center pt-1 pb-2">
+              <div className="h-1.5 w-12 rounded-full bg-slate-200" />
+            </div>
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
                 <Edit className="h-5 w-5 text-slate-700" />
@@ -1258,8 +1275,12 @@ export function DieselRequisitionView({
       {/* MODAL 5: ADD NEW PETROL PUMP / PARTY */}
       {/* ========================================================================= */}
       {isAddPartyModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs overflow-y-auto">
-          <div className="w-full max-w-md rounded-2xl bg-white border border-slate-200 shadow-2xl p-6 space-y-4 my-8 animate-in fade-in zoom-in-95 text-left">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/40 backdrop-blur-xs overflow-y-auto">
+          <div className="w-full max-w-md rounded-t-[28px] sm:rounded-2xl bg-white border-t sm:border border-slate-200 shadow-2xl p-5 sm:p-6 space-y-4 my-0 sm:my-8 animate-in slide-in-from-bottom sm:slide-in-from-bottom-0 sm:zoom-in-95 text-left max-h-[92dvh] overflow-y-auto pb-[max(env(safe-area-inset-bottom,0px),20px)]">
+            {/* Android Drag Handle (Mobile only) */}
+            <div className="sm:hidden flex justify-center pt-1 pb-2">
+              <div className="h-1.5 w-12 rounded-full bg-slate-200" />
+            </div>
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
                 <Building className="h-5 w-5 text-orange-600" />
@@ -1356,6 +1377,14 @@ export function DieselRequisitionView({
           }}
         />
       )}
+
+      {/* Mobile Floating Action Button (FAB) for rapid indent creation */}
+      <FloatingActionButton
+        icon={<Plus className="h-5 w-5 stroke-[2.5]" />}
+        label="New Indent"
+        onClick={() => setIsCreateModalOpen(true)}
+        className="sm:hidden"
+      />
     </div>
   )
 }

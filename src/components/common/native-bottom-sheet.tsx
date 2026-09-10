@@ -34,6 +34,21 @@ export function NativeBottomSheet({
     }
   }, [isOpen])
 
+  // Intercept Android hardware back button to dismiss sheet first
+  useEffect(() => {
+    if (!isOpen) return
+
+    const handleHardwareBack = (e: Event) => {
+      e.preventDefault()
+      onClose()
+    }
+
+    window.addEventListener('nativeHardwareBack', handleHardwareBack)
+    return () => {
+      window.removeEventListener('nativeHardwareBack', handleHardwareBack)
+    }
+  }, [isOpen, onClose])
+
   if (!isOpen) return null
 
   return (
