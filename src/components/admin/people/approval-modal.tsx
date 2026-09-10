@@ -209,9 +209,9 @@ export function ApprovalModal({
         type="button"
         onClick={() => setShowDeleteConfirm(true)}
         disabled={isSubmitting || isDeleting}
-        className="min-h-[48px] flex items-center justify-center gap-2 rounded-xl border border-rose-800/80 bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 px-4 py-2.5 text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
+        className="min-h-[48px] flex items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 px-4 py-2.5 text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
       >
-        <Trash2 className="h-4 w-4 text-rose-400" />
+        <Trash2 className="h-4 w-4 text-rose-600" />
         <span>Reject & Delete</span>
       </button>
 
@@ -221,7 +221,7 @@ export function ApprovalModal({
           type="button"
           onClick={onClose}
           disabled={isSubmitting || isDeleting}
-          className="flex-1 sm:flex-none min-h-[48px] rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-xs font-medium text-slate-300 hover:bg-slate-750 transition-colors cursor-pointer disabled:opacity-50"
+          className="flex-1 sm:flex-none min-h-[48px] rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer disabled:opacity-50 shadow-2xs"
         >
           Cancel
         </button>
@@ -229,7 +229,7 @@ export function ApprovalModal({
           type="button"
           onClick={handleApprove}
           disabled={isSubmitting || isDeleting || !selectedSiteId}
-          className="flex-1 sm:flex-none min-h-[48px] flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 px-6 py-2.5 text-xs font-bold text-white transition-all cursor-pointer shadow-lg shadow-emerald-600/20"
+          className="flex-1 sm:flex-none min-h-[48px] flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 px-6 py-2.5 text-xs font-bold text-white transition-all cursor-pointer shadow-sm"
         >
           {isSubmitting ? (
             <>
@@ -254,7 +254,7 @@ export function ApprovalModal({
       title="Review & Authorize Applicant"
       subtitle="Verify identity, enforce strict single-site assignment, and grant operational duties."
       icon={
-        <div className="p-2 rounded-xl bg-emerald-950/80 border border-emerald-800/80 text-emerald-400">
+        <div className="p-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-600">
           <ShieldCheck className="h-5 w-5" />
         </div>
       }
@@ -262,52 +262,52 @@ export function ApprovalModal({
     >
       <form onSubmit={handleApprove} className="space-y-5 text-left">
         {errorMessage && (
-          <div className="p-3.5 rounded-xl bg-rose-950/40 border border-rose-800/60 text-rose-300 text-xs flex items-center gap-2">
-            <AlertCircle className="h-4 w-4 shrink-0" />
+          <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
             <span>{errorMessage}</span>
           </div>
         )}
 
         {/* User Details Summary Card */}
-        <div className="p-4 rounded-2xl border border-slate-800 bg-slate-950/90 space-y-2.5 text-xs font-mono shadow-sm">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-slate-800/80 pb-2">
-            <span className="text-slate-400 flex items-center gap-1.5">
-              <User className="h-3.5 w-3.5 text-blue-400" />
+        <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50 space-y-2.5 text-xs font-mono shadow-2xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-slate-200/80 pb-2">
+            <span className="text-slate-500 flex items-center gap-1.5">
+              <User className="h-3.5 w-3.5 text-blue-600" />
               Applicant Name:
             </span>
-            <span className="text-white font-bold text-sm">{memberName}</span>
+            <span className="text-slate-900 font-bold text-sm">{memberName}</span>
           </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-slate-800/80 pb-2">
-            <span className="text-slate-400 flex items-center gap-1.5">
-              <Mail className="h-3.5 w-3.5 text-blue-400" />
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-slate-200/80 pb-2">
+            <span className="text-slate-500 flex items-center gap-1.5">
+              <Mail className="h-3.5 w-3.5 text-blue-600" />
               Email Address:
             </span>
-            <span className="text-blue-400 font-semibold">{memberEmail}</span>
+            <span className="text-blue-600 font-semibold">{memberEmail}</span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] pt-1">
             <div className="flex items-center justify-between">
-              <span className="text-slate-400 flex items-center gap-1.5">
-                <Phone className="h-3 w-3 text-slate-500" />
+              <span className="text-slate-500 flex items-center gap-1.5">
+                <Phone className="h-3 w-3 text-slate-400" />
                 Phone:
               </span>
-              <span className="text-slate-300">{memberPhone}</span>
+              <span className="text-slate-700">{memberPhone}</span>
             </div>
 
             <div className="flex items-center justify-between">
-              <span className="text-slate-400 flex items-center gap-1.5">
-                <Calendar className="h-3 w-3 text-slate-500" />
+              <span className="text-slate-500 flex items-center gap-1.5">
+                <Calendar className="h-3 w-3 text-slate-400" />
                 Registered At:
               </span>
-              <span className="text-slate-300">{memberDate}</span>
+              <span className="text-slate-700">{memberDate}</span>
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-1 border-t border-slate-800/60 text-[11px]">
-            <span className="text-slate-400">Current Status:</span>
-            <span className="inline-flex items-center gap-1.5 text-amber-400 font-bold uppercase tracking-wider">
-              <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+          <div className="flex items-center justify-between pt-1 border-t border-slate-200/80 text-[11px]">
+            <span className="text-slate-500">Current Status:</span>
+            <span className="inline-flex items-center gap-1.5 text-amber-800 font-bold uppercase tracking-wider bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+              <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
               Pending Authorization
             </span>
           </div>
@@ -315,12 +315,12 @@ export function ApprovalModal({
 
         {/* Mandatory Site Lock Selection */}
         <div className="space-y-1.5">
-          <label className="flex items-center justify-between text-xs font-semibold text-slate-200">
+          <label className="flex items-center justify-between text-xs font-semibold text-slate-700">
             <span className="flex items-center gap-1.5">
-              <MapPin className="h-3.5 w-3.5 text-blue-400" />
+              <MapPin className="h-3.5 w-3.5 text-blue-600" />
               Assigned Site (Strict Single-Site Lock) *
             </span>
-            <span className="text-[10px] font-mono text-emerald-400 font-normal">
+            <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded font-medium border border-emerald-200">
               Mandatory Security Rule
             </span>
           </label>
@@ -328,7 +328,7 @@ export function ApprovalModal({
             value={selectedSiteId}
             onChange={(e) => setSelectedSiteId(e.target.value)}
             required
-            className="w-full min-h-[48px] rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none transition-colors"
+            className="w-full min-h-[48px] rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:border-blue-500 focus:outline-none transition-colors shadow-2xs"
           >
             <option value="" disabled>
               -- Select Mandatory Site --
@@ -339,7 +339,7 @@ export function ApprovalModal({
               </option>
             ))}
           </select>
-          <p className="text-[11px] text-slate-400 leading-normal">
+          <p className="text-[11px] text-slate-500 leading-normal">
             Single-Site Lock: Once assigned, this employee will only be permitted to access and log transactions within this specific project site.
           </p>
         </div>
@@ -347,13 +347,13 @@ export function ApprovalModal({
         {/* Role & Department Row */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="space-y-1.5">
-            <label className="block text-xs font-semibold text-slate-200">
+            <label className="block text-xs font-semibold text-slate-700">
               System Access Role *
             </label>
             <select
               value={selectedRole}
               onChange={(e) => setSelectedRole(e.target.value as 'ADMIN' | 'USER')}
-              className="w-full min-h-[48px] rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-xs text-white focus:border-blue-500 focus:outline-none transition-colors"
+              className="w-full min-h-[48px] rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:border-blue-500 focus:outline-none transition-colors shadow-2xs"
             >
               <option value="USER">Standard User (Site Operations)</option>
               <option value="ADMIN">System Administrator (Full Privileges)</option>
@@ -361,13 +361,13 @@ export function ApprovalModal({
           </div>
 
           <div className="space-y-1.5">
-            <label className="block text-xs font-semibold text-slate-200">
+            <label className="block text-xs font-semibold text-slate-700">
               Operational Role
             </label>
             <select
               value={selectedCustomRoleId}
               onChange={(e) => setSelectedCustomRoleId(e.target.value)}
-              className="w-full min-h-[48px] rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-xs text-white focus:border-blue-500 focus:outline-none transition-colors"
+              className="w-full min-h-[48px] rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:border-blue-500 focus:outline-none transition-colors shadow-2xs"
             >
               <option value="">-- General Site Staff --</option>
               {roles.filter((r) => r.code !== 'ADMIN').map((r) => (
@@ -379,13 +379,13 @@ export function ApprovalModal({
           </div>
 
           <div className="space-y-1.5">
-            <label className="block text-xs font-semibold text-slate-200">
+            <label className="block text-xs font-semibold text-slate-700">
               Department (Optional)
             </label>
             <select
               value={selectedDepartmentId}
               onChange={(e) => setSelectedDepartmentId(e.target.value)}
-              className="w-full min-h-[48px] rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-xs text-white focus:border-blue-500 focus:outline-none transition-colors"
+              className="w-full min-h-[48px] rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:border-blue-500 focus:outline-none transition-colors shadow-2xs"
             >
               <option value="">-- None / General --</option>
               {departments.map((d) => (
@@ -398,13 +398,13 @@ export function ApprovalModal({
         </div>
 
         {/* Task-Based Access Control Authorizations */}
-        <div className="space-y-2.5 pt-2 border-t border-slate-800">
+        <div className="space-y-2.5 pt-2 border-t border-slate-200">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-xs font-bold text-white uppercase tracking-wider">
+              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
                 Operational Task Permissions
               </h3>
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[11px] text-slate-500">
                 Select duties this employee can execute.
               </p>
             </div>
@@ -412,15 +412,15 @@ export function ApprovalModal({
               <button
                 type="button"
                 onClick={handleSelectAllTasks}
-                className="text-blue-400 hover:text-blue-300 cursor-pointer min-h-[36px] flex items-center px-1"
+                className="text-blue-600 hover:text-blue-700 font-semibold cursor-pointer min-h-[36px] flex items-center px-1"
               >
                 Select All
               </button>
-              <span className="text-slate-600">|</span>
+              <span className="text-slate-300">|</span>
               <button
                 type="button"
                 onClick={handleClearAllTasks}
-                className="text-slate-400 hover:text-slate-300 cursor-pointer min-h-[36px] flex items-center px-1"
+                className="text-slate-500 hover:text-slate-700 cursor-pointer min-h-[36px] flex items-center px-1"
               >
                 Clear
               </button>
@@ -437,30 +437,30 @@ export function ApprovalModal({
                   onClick={() => handleToggleTask(task.id)}
                   className={`flex items-start gap-3 p-3 rounded-2xl border text-left transition-all cursor-pointer min-h-[52px] ${
                     isChecked
-                      ? 'border-emerald-700/60 bg-emerald-950/30'
-                      : 'border-slate-800 bg-slate-950 hover:border-slate-700'
+                      ? 'border-emerald-300 bg-emerald-50/70 shadow-2xs'
+                      : 'border-slate-200 bg-white hover:border-slate-300'
                   }`}
                 >
                   <div
                     className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-lg border transition-colors ${
                       isChecked
                         ? 'border-emerald-500 bg-emerald-600 text-white'
-                        : 'border-slate-600 bg-slate-900'
+                        : 'border-slate-300 bg-slate-50'
                     }`}
                   >
                     {isChecked && <Check className="h-3.5 w-3.5 stroke-[3]" />}
                   </div>
                   <div className="space-y-0.5">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-semibold text-white">
+                      <span className="text-xs font-semibold text-slate-900">
                         {task.name}
                       </span>
-                      <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-slate-800 text-slate-300 uppercase">
+                      <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 uppercase">
                         {task.module}
                       </span>
                     </div>
                     {task.description && (
-                      <p className="text-[11px] text-slate-400 leading-tight">
+                      <p className="text-[11px] text-slate-500 leading-tight">
                         {task.description}
                       </p>
                     )}
@@ -474,26 +474,26 @@ export function ApprovalModal({
 
       {/* Delete Confirmation Sheet */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md animate-in fade-in">
-          <div className="w-full max-w-md rounded-3xl border border-rose-700/80 bg-slate-900 p-6 shadow-2xl text-left space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in">
+          <div className="w-full max-w-md rounded-3xl border border-rose-200 bg-white p-6 shadow-2xl text-left space-y-4">
             <div className="flex items-center gap-3">
-              <div className="p-3 rounded-2xl bg-rose-950 text-rose-400 border border-rose-800">
+              <div className="p-3 rounded-2xl bg-rose-50 text-rose-600 border border-rose-200">
                 <AlertTriangle className="h-6 w-6" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-white">
+                <h3 className="text-sm font-bold text-slate-900">
                   Permanently Delete Registration?
                 </h3>
-                <p className="text-xs text-rose-300/80">
+                <p className="text-xs text-rose-600">
                   This action cannot be undone.
                 </p>
               </div>
             </div>
 
-            <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-xs font-mono text-slate-300 space-y-1">
-              <div>Applicant: <strong className="text-white">{memberName}</strong></div>
-              <div>Email: <strong className="text-blue-400">{memberEmail}</strong></div>
-              <p className="text-[11px] text-slate-400 pt-1">
+            <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-mono text-slate-700 space-y-1">
+              <div>Applicant: <strong className="text-slate-900">{memberName}</strong></div>
+              <div>Email: <strong className="text-blue-600">{memberEmail}</strong></div>
+              <p className="text-[11px] text-slate-500 pt-1">
                 This account will be completely removed from Supabase authentication and database.
               </p>
             </div>
@@ -503,7 +503,7 @@ export function ApprovalModal({
                 type="button"
                 disabled={isDeleting}
                 onClick={() => setShowDeleteConfirm(false)}
-                className="min-h-[44px] rounded-xl border border-slate-700 bg-slate-800 px-4 py-2 text-xs font-medium text-slate-300 hover:bg-slate-750 transition-colors cursor-pointer"
+                className="min-h-[44px] rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer shadow-2xs"
               >
                 Cancel
               </button>
@@ -511,7 +511,7 @@ export function ApprovalModal({
                 type="button"
                 disabled={isDeleting}
                 onClick={handleDeleteRequest}
-                className="min-h-[44px] flex items-center gap-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white px-5 py-2 text-xs font-bold transition-colors cursor-pointer shadow-lg shadow-rose-600/20"
+                className="min-h-[44px] flex items-center gap-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white px-5 py-2 text-xs font-bold transition-colors cursor-pointer shadow-sm"
               >
                 {isDeleting ? (
                   <>

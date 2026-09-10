@@ -39,6 +39,8 @@ interface RpcContextPayload {
   permissions?: string[]
   assignedTasks?: UserTaskAssignment[]
   assigned_tasks?: UserTaskAssignment[]
+  assignedSite?: { id: string; name: string; code: string; location?: string }
+  assigned_site?: { id: string; name: string; code: string; location?: string }
   profile?: {
     id: string
     email?: string | null
@@ -65,6 +67,7 @@ interface RpcContextPayload {
     phone?: string | null
     departmentId?: string | null
     siteId?: string | null
+    site_id?: string | null
     isActive?: boolean
     is_active?: boolean
     createdAt?: string
@@ -153,9 +156,76 @@ export class AuthContextRepository {
             const permissions = payload.permissions ?? []
             const assignedTasks = payload.assignedTasks ?? payload.assigned_tasks ?? []
 
+            // Resolve assignedSite
+            let assignedSite: { id: string; name: string; code: string; location?: string } | undefined = undefined
+            if (payload.assignedSite || (payload as unknown as { assigned_site?: { id: string; name: string; code: string; location?: string } }).assigned_site) {
+              const s = (payload.assignedSite || (payload as unknown as { assigned_site?: { id: string; name: string; code: string; location?: string } }).assigned_site)!
+              assignedSite = {
+                id: s.id,
+                name: s.name,
+                code: s.code,
+                location: s.location,
+              }
+            } else {
+              const targetSiteId =
+                payload.membership.siteId ??
+                payload.membership.site_id ??
+                (payload as unknown as { siteId?: string; site_id?: string }).siteId ??
+                (payload as unknown as { siteId?: string; site_id?: string }).site_id
+
+              if (targetSiteId) {
+                try {
+                  const { data: siteData } = await supabase
+                    .from('sites')
+                    .select('id, name, code, location')
+                    .eq('id', targetSiteId)
+                    .maybeSingle()
+                  if (siteData) {
+                    assignedSite = {
+                      id: siteData.id,
+                      name: siteData.name,
+                      code: siteData.code,
+                      location: siteData.location,
+                    }
+                  }
+                } catch (siteErr) {
+                  console.warn('[AuthDiagnostic] Failed to fetch site in RPC block:', siteErr)
+                }
+              }
+
+              // Double fallback: check organization_members directly if still undefined
+              if (!assignedSite && userId) {
+                try {
+                  const { data: omData } = await supabase
+                    .from('organization_members')
+                    .select('site_id')
+                    .eq('user_id', userId)
+                    .limit(1)
+                    .maybeSingle()
+                  if (omData?.site_id) {
+                    const { data: siteData } = await supabase
+                      .from('sites')
+                      .select('id, name, code, location')
+                      .eq('id', omData.site_id)
+                      .maybeSingle()
+                    if (siteData) {
+                      assignedSite = {
+                        id: siteData.id,
+                        name: siteData.name,
+                        code: siteData.code,
+                        location: siteData.location,
+                      }
+                    }
+                  }
+                } catch {
+                  // ignore
+                }
+              }
+            }
+
             console.log('[AuthDiagnostic] 5. Final Resolved Role:', rawRole, 'Base Role:', baseRole)
             console.log('[AuthDiagnostic] 6. Final Resolved Organization:', organization.name)
-            console.log('[AuthDiagnostic] 7. Permissions Count:', permissions.length, 'Tasks Count:', assignedTasks.length)
+            console.log('[AuthDiagnostic] 7. Assigned Site:', assignedSite?.name || 'None', 'Permissions Count:', permissions.length, 'Tasks Count:', assignedTasks.length)
 
             return {
               status: 'SUCCESS',
@@ -166,6 +236,7 @@ export class AuthContextRepository {
               profile,
               membership,
               organization,
+              assignedSite,
               permissions,
               assignedTasks,
             }

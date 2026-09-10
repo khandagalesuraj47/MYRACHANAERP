@@ -212,7 +212,7 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
             type="button"
             onClick={loadData}
             title="Refresh Personnel Directory"
-            className="flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer shadow-2xs"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
             <span>Sync</span>
@@ -222,32 +222,32 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
 
       {/* Error alert */}
       {error && (
-        <div className="p-4 rounded-xl bg-rose-950/40 border border-rose-900/60 text-rose-300 text-xs flex items-center gap-3">
-          <AlertCircle className="h-5 w-5 shrink-0 text-rose-400" />
+        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-3">
+          <AlertCircle className="h-5 w-5 shrink-0 text-rose-600" />
           <div className="text-left">
             <p className="font-semibold">Unable to load personnel</p>
-            <p className="text-rose-400/80">{error}</p>
+            <p className="text-rose-600">{error}</p>
           </div>
         </div>
       )}
 
       {/* Pending Approvals Quick Alert (shown when in Directory view) */}
       {viewMode === 'DIRECTORY' && members.some((m) => !m.isActive) && (
-        <div className="p-4 rounded-xl bg-amber-950/40 border border-amber-800/80 text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs animate-in fade-in">
+        <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs animate-in fade-in">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-amber-900/60 text-amber-400 shrink-0">
+            <div className="p-2 rounded-lg bg-amber-100 text-amber-700 shrink-0">
               <Clock className="h-5 w-5" />
             </div>
             <div className="text-left space-y-0.5">
               <div className="flex items-center gap-2">
-                <span className="font-bold text-white text-sm">
+                <span className="font-bold text-slate-900 text-sm">
                   Pending Self-Registrations ({members.filter((m) => !m.isActive).length})
                 </span>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-900 text-amber-300 font-bold uppercase">
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 font-bold uppercase">
                   Authorization Required
                 </span>
               </div>
-              <p className="text-[11px] text-amber-300/80">
+              <p className="text-[11px] text-amber-800">
                 New user accounts have registered and require Administrator approval, strict site assignment, and initial task allocations.
               </p>
             </div>
@@ -297,7 +297,7 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
 
       {/* View Mode Switcher (4 Distinct Tabs) */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
-        <div className="flex flex-wrap items-center gap-1.5 bg-slate-900/90 border border-slate-800 p-1.5 rounded-xl">
+        <div className="flex flex-wrap items-center gap-1.5 bg-slate-100 border border-slate-200 p-1.5 rounded-xl">
           {/* Tab 1: Personnel Directory */}
           <button
             type="button"
@@ -305,12 +305,12 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
             className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               viewMode === 'DIRECTORY'
                 ? 'bg-blue-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-white'
             }`}
           >
             <Users className="h-3.5 w-3.5" />
             <span>Personnel Directory</span>
-            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-800 text-slate-300">
+            <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded ${viewMode === 'DIRECTORY' ? 'bg-blue-700 text-white' : 'bg-slate-200 text-slate-700'}`}>
               {members.filter((m) => m.isActive).length}
             </span>
           </button>
@@ -323,8 +323,8 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
               viewMode === 'APPROVALS'
                 ? 'bg-amber-600 text-white shadow-sm'
                 : members.some((m) => !m.isActive)
-                ? 'text-amber-400 hover:bg-amber-950/40 border border-amber-800/50'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                ? 'text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-white'
             }`}
           >
             <ShieldCheck className="h-3.5 w-3.5" />
@@ -332,8 +332,8 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
             <span
               className={`text-[10px] font-mono px-1.5 py-0.2 rounded font-bold ${
                 members.some((m) => !m.isActive)
-                  ? 'bg-amber-950 text-amber-300 border border-amber-700'
-                  : 'bg-slate-800 text-slate-400'
+                  ? 'bg-amber-200 text-amber-900 border border-amber-300'
+                  : 'bg-slate-200 text-slate-600'
               }`}
             >
               {members.filter((m) => !m.isActive).length}
@@ -348,8 +348,8 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
               viewMode === 'TEMP_PASS'
                 ? 'bg-purple-600 text-white shadow-sm'
                 : passwordRequests.length > 0
-                ? 'text-purple-400 hover:bg-purple-950/40 border border-purple-800/50'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                ? 'text-purple-800 bg-purple-50 hover:bg-purple-100 border border-purple-200'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-white'
             }`}
           >
             <KeyRound className="h-3.5 w-3.5" />
@@ -357,8 +357,8 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
             <span
               className={`text-[10px] font-mono px-1.5 py-0.2 rounded font-bold ${
                 passwordRequests.length > 0
-                  ? 'bg-purple-950 text-purple-300 border border-purple-700'
-                  : 'bg-slate-800 text-slate-400'
+                  ? 'bg-purple-200 text-purple-900 border border-purple-300'
+                  : 'bg-slate-200 text-slate-600'
               }`}
             >
               {passwordRequests.length}
@@ -372,19 +372,19 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
             className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               viewMode === 'MATRIX'
                 ? 'bg-blue-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-white'
             }`}
           >
             <Layers className="h-3.5 w-3.5" />
             <span>Task Matrix (TBAC Grid)</span>
-            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-emerald-950 border border-emerald-800 text-emerald-400">
+            <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded ${viewMode === 'MATRIX' ? 'bg-blue-700 text-white' : 'bg-emerald-100 border border-emerald-200 text-emerald-800'}`}>
               4 Core Tasks
             </span>
           </button>
         </div>
 
-        <div className="hidden sm:flex items-center gap-2 text-xs font-mono text-slate-400">
-          <span>Total Personnel: <strong className="text-white">{members.length}</strong></span>
+        <div className="hidden sm:flex items-center gap-2 text-xs font-mono text-slate-500">
+          <span>Total Personnel: <strong className="text-slate-900">{members.length}</strong></span>
         </div>
       </div>
 
@@ -413,16 +413,16 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
       ) : (
         <div className="space-y-4">
           {/* Filter and Search Bar */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-slate-900/60 border border-slate-800 p-3.5 rounded-xl">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-white border border-slate-200 p-3.5 rounded-xl shadow-xs">
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-500" />
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
           <input
             type="text"
             placeholder="Search by name, email, code..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-lg bg-slate-950 border border-slate-800 pl-9 pr-3 py-2 text-xs text-slate-200 placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+            className="w-full rounded-lg bg-slate-50 border border-slate-200 pl-9 pr-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:bg-white focus:outline-none transition-colors"
           />
         </div>
 
@@ -431,7 +431,7 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
-            className="w-full rounded-lg bg-slate-950 border border-slate-800 px-3 py-2 text-xs text-slate-200 focus:border-blue-500 focus:outline-none"
+            className="w-full rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none transition-colors"
           >
             <option value="ALL">All Roles</option>
             <option value="ADMIN">ADMIN</option>
@@ -448,7 +448,7 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
           <select
             value={departmentFilter}
             onChange={(e) => setDepartmentFilter(e.target.value)}
-            className="w-full rounded-lg bg-slate-950 border border-slate-800 px-3 py-2 text-xs text-slate-200 focus:border-blue-500 focus:outline-none"
+            className="w-full rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none transition-colors"
           >
             <option value="ALL">All Departments</option>
             {departments.map((d) => (
@@ -464,7 +464,7 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="w-full rounded-lg bg-slate-950 border border-slate-800 px-3 py-2 text-xs text-slate-200 focus:border-blue-500 focus:outline-none"
+            className="w-full rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none transition-colors"
           >
             <option value="ALL">All Statuses</option>
             <option value="ACTIVE">Active Only</option>
@@ -474,10 +474,10 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
       </div>
 
       {/* Personnel High-Density Table */}
-      <div className="rounded-xl border border-slate-800 bg-slate-950/70 overflow-hidden shadow-xl">
+      <div className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-slate-300">
-            <thead className="border-b border-slate-800 bg-slate-900/90 font-mono text-[11px] text-slate-400 uppercase tracking-wider">
+          <table className="w-full text-left text-xs text-slate-700">
+            <thead className="border-b border-slate-200 bg-slate-50/80 font-mono text-[11px] text-slate-500 uppercase tracking-wider">
               <tr>
                 <th className="px-4 py-3.5 font-semibold">Personnel</th>
                 <th className="px-4 py-3.5 font-semibold">Role & Title</th>
@@ -487,7 +487,7 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
                 <th className="px-4 py-3.5 font-semibold text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60">
+            <tbody className="divide-y divide-slate-100">
               {loading ? (
                 <tr>
                   <td colSpan={6} className="px-4 py-12 text-center text-slate-500">
@@ -521,23 +521,23 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
                   return (
                     <tr
                       key={member.id}
-                      className="hover:bg-slate-900/50 transition-colors group"
+                      className="hover:bg-slate-50 transition-colors group"
                     >
                       {/* Column 1: Personnel */}
                       <td className="px-4 py-3.5">
                         <div className="flex items-center gap-3">
-                          <div className="h-9 w-9 rounded-lg bg-blue-950 border border-blue-800/80 flex items-center justify-center text-blue-400 font-bold text-xs shrink-0">
+                          <div className="h-9 w-9 rounded-lg bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-700 font-bold text-xs shrink-0">
                             {initials}
                           </div>
                           <div className="min-w-0">
-                            <p className="font-semibold text-white truncate group-hover:text-blue-400 transition-colors">
+                            <p className="font-semibold text-slate-900 truncate group-hover:text-blue-600 transition-colors">
                               {member.profile?.fullName || 'Unnamed Personnel'}
                             </p>
-                            <p className="text-[11px] text-slate-400 font-mono truncate">
+                            <p className="text-[11px] text-slate-500 font-mono truncate">
                               {member.profile?.email || member.userId}
                             </p>
                             {member.employeeCode && (
-                              <span className="inline-block font-mono text-[9px] text-slate-400 bg-slate-900 border border-slate-800 px-1 py-0.2 rounded mt-0.5">
+                              <span className="inline-block font-mono text-[9px] text-slate-600 bg-slate-100 border border-slate-200 px-1 py-0.2 rounded mt-0.5">
                                 {member.employeeCode}
                               </span>
                             )}
@@ -551,15 +551,15 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
                           <span
                             className={`inline-flex items-center gap-1 font-mono text-[10px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider ${
                               member.role === 'ADMIN'
-                                ? 'bg-amber-950/60 border-amber-800/80 text-amber-300'
-                                : 'bg-slate-800 border-slate-700 text-slate-300'
+                                ? 'bg-amber-50 border-amber-200 text-amber-800'
+                                : 'bg-slate-100 border-slate-200 text-slate-700'
                             }`}
                           >
                             <Shield className="h-2.5 w-2.5" />
                             <span>{roleName}</span>
                           </span>
                           {member.designation && (
-                            <p className="text-[11px] text-slate-400 truncate">
+                            <p className="text-[11px] text-slate-500 truncate">
                               {member.designation}
                             </p>
                           )}
@@ -570,16 +570,16 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
                       <td className="px-4 py-3.5">
                         <div className="space-y-0.5 text-[11px]">
                           {siteName ? (
-                            <div className="flex items-center gap-1.5 text-slate-300">
-                              <MapPin className="h-3 w-3 text-blue-400 shrink-0" />
+                            <div className="flex items-center gap-1.5 text-slate-700 font-medium">
+                              <MapPin className="h-3 w-3 text-blue-600 shrink-0" />
                               <span className="truncate">{siteName}</span>
                             </div>
                           ) : (
-                            <span className="text-slate-500 italic">Global / HO</span>
+                            <span className="text-slate-400 italic">Global / HO</span>
                           )}
                           {deptName && (
-                            <div className="flex items-center gap-1.5 text-slate-400">
-                              <Briefcase className="h-3 w-3 text-slate-500 shrink-0" />
+                            <div className="flex items-center gap-1.5 text-slate-500">
+                              <Briefcase className="h-3 w-3 text-slate-400 shrink-0" />
                               <span className="truncate">{deptName}</span>
                             </div>
                           )}
@@ -589,7 +589,7 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
                       {/* Column 4: Assigned Operational Duties (TBAC) */}
                       <td className="px-4 py-3.5">
                         {member.role === 'ADMIN' ? (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-mono text-emerald-400 bg-emerald-950/40 border border-emerald-800/60 px-2 py-0.5 rounded">
+                          <span className="inline-flex items-center gap-1 text-[11px] font-mono text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded font-semibold">
                             <CheckCircle className="h-3 w-3" />
                             All Operations Authorized
                           </span>
@@ -598,20 +598,20 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
                             {member.assignedTasks.slice(0, 3).map((task) => (
                               <span
                                 key={task.taskTypeId}
-                                className="inline-flex items-center gap-1 text-[10px] font-mono bg-blue-950/50 border border-blue-800/50 text-blue-300 px-1.5 py-0.5 rounded truncate"
+                                className="inline-flex items-center gap-1 text-[10px] font-mono bg-blue-50 border border-blue-200 text-blue-700 px-1.5 py-0.5 rounded truncate"
                                 title={task.name}
                               >
                                 {task.name}
                               </span>
                             ))}
                             {member.assignedTasks.length > 3 && (
-                              <span className="text-[10px] font-mono text-slate-400 bg-slate-900 border border-slate-800 px-1.5 py-0.5 rounded">
+                              <span className="text-[10px] font-mono text-slate-600 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded">
                                 +{member.assignedTasks.length - 3} more
                               </span>
                             )}
                           </div>
                         ) : (
-                          <span className="text-[11px] font-mono text-slate-500 italic">
+                          <span className="text-[11px] font-mono text-slate-400 italic">
                             No tasks assigned
                           </span>
                         )}
@@ -632,7 +632,7 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
                           />
                           <span
                             className={`font-mono text-[11px] font-medium ${
-                              member.isActive ? 'text-emerald-400' : 'text-rose-400'
+                              member.isActive ? 'text-emerald-700' : 'text-rose-700'
                             }`}
                           >
                             {member.isActive ? 'Active' : 'Inactive'}
@@ -649,14 +649,14 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
                               (r) =>
                                 r.userId === member.userId ||
                                 (member.profile?.email &&
-                                  r.email.toLowerCase() === member.profile.email.toLowerCase())
+                                   r.email.toLowerCase() === member.profile.email.toLowerCase())
                             )
                             if (pendingReq) {
                               return (
                                 <button
                                   type="button"
                                   onClick={() => setIssuingRequest(pendingReq)}
-                                  className="inline-flex items-center gap-1.5 rounded-lg border border-purple-700 bg-purple-950/90 px-2.5 py-1.5 text-[11px] font-bold text-purple-300 hover:bg-purple-600 hover:text-white transition-colors cursor-pointer shadow-sm shadow-purple-700/30"
+                                  className="inline-flex items-center gap-1.5 rounded-lg border border-purple-200 bg-purple-50 px-2.5 py-1.5 text-[11px] font-bold text-purple-700 hover:bg-purple-600 hover:text-white transition-colors cursor-pointer shadow-2xs"
                                 >
                                   <KeyRound className="h-3.5 w-3.5" />
                                   <span>Issue Temp Pass</span>
@@ -674,7 +674,7 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
                                   })
                                 }
                                 title="Issue / Reset temporary password for this user"
-                                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900 px-2 py-1.5 text-[11px] font-medium text-slate-400 hover:text-purple-300 hover:bg-slate-800 hover:border-purple-800 transition-colors cursor-pointer"
+                                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[11px] font-medium text-slate-700 hover:text-purple-700 hover:bg-purple-50 hover:border-purple-200 transition-colors cursor-pointer shadow-2xs"
                               >
                                 <KeyRound className="h-3.5 w-3.5" />
                                 <span className="hidden xl:inline">Temp Pass</span>
@@ -686,7 +686,7 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
                             <button
                               type="button"
                               onClick={() => setApprovingMember(member)}
-                              className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-700 bg-emerald-950/80 px-2.5 py-1.5 text-[11px] font-bold text-emerald-300 hover:bg-emerald-600 hover:text-white transition-colors cursor-pointer shadow-sm shadow-emerald-700/20"
+                              className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 px-2.5 py-1.5 text-[11px] font-bold text-white transition-colors cursor-pointer shadow-2xs"
                             >
                               <ShieldCheck className="h-3.5 w-3.5" />
                               <span>Authorize</span>
@@ -695,7 +695,7 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
                           <button
                             type="button"
                             onClick={() => setSelectedMember(member)}
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900 px-2.5 py-1.5 text-[11px] font-medium text-slate-300 hover:bg-blue-600 hover:text-white hover:border-blue-500 transition-colors cursor-pointer"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-medium text-slate-700 hover:bg-blue-600 hover:text-white hover:border-blue-500 transition-colors cursor-pointer shadow-2xs"
                           >
                             <Settings2 className="h-3.5 w-3.5" />
                             <span>Configure</span>
@@ -704,7 +704,7 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
                             type="button"
                             onClick={() => setDeletingMember(member)}
                             title="Deactivate or Permanently Delete User"
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900 px-2 py-1.5 text-[11px] font-medium text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 hover:border-rose-800 transition-colors cursor-pointer"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[11px] font-medium text-slate-500 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-200 transition-colors cursor-pointer shadow-2xs"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                             <span className="hidden xl:inline">Delete</span>

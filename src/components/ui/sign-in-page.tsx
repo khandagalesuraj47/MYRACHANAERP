@@ -286,9 +286,9 @@ export function SignInPage({ onSuccess, onNavigateHome }: SignInPageProps) {
   }
 
   return (
-    <div className="min-h-screen md:h-screen w-full flex flex-col md:flex-row overflow-x-hidden overflow-y-auto md:overflow-hidden bg-white text-slate-900 font-sans antialiased">
-      {/* MOBILE TOP IMAGE BANNER (Shown only on small screens < md) */}
-      <div className="md:hidden w-full h-48 relative overflow-hidden bg-slate-950 shrink-0 select-none">
+    <div className="min-h-[100dvh] md:h-screen w-full max-w-[100vw] flex flex-col md:flex-row overflow-x-hidden overflow-y-auto md:overflow-hidden bg-white text-slate-900 font-sans antialiased">
+      {/* MOBILE TOP IMAGE BANNER (Compact & responsive across all phone sizes) */}
+      <div className="md:hidden w-full h-36 relative overflow-hidden bg-slate-900 shrink-0 select-none">
         <img
           src="/construction-banner.png"
           onError={(e) => {
@@ -518,7 +518,7 @@ export function SignInPage({ onSuccess, onNavigateHome }: SignInPageProps) {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-2.5 px-4 rounded-lg bg-slate-950 hover:bg-slate-800 active:bg-black text-white font-medium text-sm transition-all shadow-sm flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+                className="w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-sm transition-all shadow-md shadow-blue-600/25 flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
               >
                 {isLoading ? (
                   <>
@@ -743,20 +743,20 @@ export function SignInPage({ onSuccess, onNavigateHome }: SignInPageProps) {
                   </div>
 
                   {/* Direct Call Administrator Card (Revealed only after submission with smooth animation) */}
-                  <div className="p-5 rounded-2xl border border-slate-800 bg-slate-950 text-white space-y-3 text-center shadow-xl animate-in fade-in slide-in-from-bottom-4 zoom-in-95 duration-700">
+                  <div className="p-5 rounded-2xl border border-blue-200 bg-blue-50/70 text-slate-900 space-y-3 text-center shadow-sm animate-in fade-in slide-in-from-bottom-4 zoom-in-95 duration-700">
                     <div className="flex items-center justify-center gap-2">
-                      <Phone className="h-4 w-4 text-emerald-400 animate-bounce" />
-                      <span className="font-mono text-xs uppercase tracking-widest text-emerald-400 font-bold">
+                      <Phone className="h-4 w-4 text-blue-600 animate-bounce" />
+                      <span className="font-mono text-xs uppercase tracking-widest text-blue-800 font-bold">
                         Admin Helpline Number
                       </span>
                     </div>
-                    <div className="text-3xl font-mono font-black tracking-wider text-emerald-400">
+                    <div className="text-3xl font-mono font-black tracking-wider text-blue-900">
                       7770002696
                     </div>
-                    <p className="text-xs text-slate-300 leading-relaxed max-w-xs mx-auto">
+                    <p className="text-xs text-slate-600 leading-relaxed max-w-xs mx-auto">
                       Call the Admin now to say:
                       <br />
-                      <span className="text-amber-300 font-semibold font-mono">
+                      <span className="text-blue-800 font-bold font-mono">
                         "Temporary password dya, request dili ahe"
                       </span>
                     </p>

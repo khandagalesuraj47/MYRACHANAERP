@@ -102,19 +102,19 @@ export function IssueTempPasswordModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="w-full max-w-lg rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl overflow-hidden text-slate-100 flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="w-full max-w-lg rounded-2xl bg-white border border-slate-200 shadow-2xl overflow-hidden text-slate-800 flex flex-col">
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-950/60">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/80">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">
+            <div className="p-2 rounded-lg bg-amber-50 text-amber-600 border border-amber-200">
               <KeyRound className="h-4 w-4" />
             </div>
             <div className="text-left">
-              <h2 className="text-sm font-bold text-white tracking-tight">
+              <h2 className="text-sm font-bold text-slate-900 tracking-tight">
                 {issuedPassword ? 'Temporary Password Issued' : 'Issue Temporary Password'}
               </h2>
-              <p className="text-[11px] text-slate-400 font-mono">
+              <p className="text-[11px] text-slate-500 font-mono">
                 {request ? `Request ID: ${request.id.slice(0, 8)}...` : 'Direct Helpline Assignment'}
               </p>
             </div>
@@ -122,7 +122,7 @@ export function IssueTempPasswordModal({
           <button
             type="button"
             onClick={issuedPassword ? handleFinish : onClose}
-            className="rounded-lg p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+            className="rounded-lg p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
           >
             <X className="h-4 w-4" />
           </button>
@@ -133,50 +133,50 @@ export function IssueTempPasswordModal({
           {issuedPassword ? (
             /* Success View */
             <div className="space-y-5">
-              <div className="p-4 rounded-xl bg-emerald-950/40 border border-emerald-800/80 text-emerald-200 flex items-start gap-3">
-                <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0 mt-0.5" />
+              <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 flex items-start gap-3">
+                <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
                 <div className="text-xs space-y-1">
-                  <p className="font-bold text-white">Temporary Password Active in Database</p>
-                  <p className="text-emerald-300/90 leading-relaxed">
+                  <p className="font-bold text-emerald-950">Temporary Password Active in Database</p>
+                  <p className="text-emerald-800 leading-relaxed">
                     The user can now log in using their email and this temporary password. Upon login, they will be strictly required to set their own permanent password.
                   </p>
                 </div>
               </div>
 
               {/* Target User Info */}
-              <div className="rounded-xl bg-slate-950 border border-slate-800 p-4 space-y-2">
-                <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block">
+              <div className="rounded-xl bg-slate-50 border border-slate-200 p-4 space-y-2">
+                <span className="text-[10px] font-mono text-slate-500 uppercase tracking-wider block font-medium">
                   Employee Account
                 </span>
-                <p className="text-sm font-semibold text-white">{email}</p>
+                <p className="text-sm font-semibold text-slate-900">{email}</p>
               </div>
 
               {/* Generated Temp Password Display */}
-              <div className="rounded-xl bg-slate-950 border border-amber-700/50 p-4 space-y-2 text-center">
-                <span className="text-[10px] font-mono text-amber-400 uppercase tracking-wider block font-bold">
+              <div className="rounded-xl bg-amber-50/70 border border-amber-200 p-4 space-y-2 text-center">
+                <span className="text-[10px] font-mono text-amber-800 uppercase tracking-wider block font-bold">
                   Temporary Password to Provide User
                 </span>
                 <div className="flex items-center justify-center gap-3">
-                  <span className="font-mono text-2xl font-bold tracking-widest text-white select-all">
+                  <span className="font-mono text-2xl font-black tracking-widest text-slate-900 select-all">
                     {issuedPassword}
                   </span>
                   <button
                     type="button"
                     onClick={() => handleCopy(issuedPassword)}
-                    className="p-2 rounded-lg bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/30 transition-colors cursor-pointer"
+                    className="p-2 rounded-lg bg-amber-100 text-amber-800 hover:bg-amber-200 border border-amber-300 transition-colors cursor-pointer"
                     title="Copy Temporary Password"
                   >
-                    {copied ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
+                    {copied ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
                   </button>
                 </div>
               </div>
 
               {/* Helpline Call reminder */}
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-blue-950/40 border border-blue-800/60 text-blue-300 text-xs">
-                <PhoneCall className="h-4 w-4 text-blue-400 shrink-0" />
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-blue-50 border border-blue-200 text-blue-900 text-xs">
+                <PhoneCall className="h-4 w-4 text-blue-600 shrink-0" />
                 <span>
                   Share this temporary password with the user when they call the Admin Helpline at{' '}
-                  <strong className="text-white font-mono">7770002696</strong>.
+                  <strong className="text-blue-950 font-mono font-bold">7770002696</strong>.
                 </span>
               </div>
 
@@ -184,7 +184,7 @@ export function IssueTempPasswordModal({
                 <button
                   type="button"
                   onClick={handleFinish}
-                  className="w-full py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition-colors cursor-pointer shadow-md shadow-blue-600/20"
+                  className="w-full py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition-colors cursor-pointer shadow-md shadow-blue-600/20"
                 >
                   Done & Close
                 </button>
@@ -194,31 +194,31 @@ export function IssueTempPasswordModal({
             /* Issue Form */
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
-                <div className="p-3.5 rounded-xl bg-rose-950/40 border border-rose-900/60 text-rose-300 text-xs flex items-center gap-2.5">
-                  <AlertCircle className="h-4 w-4 text-rose-400 shrink-0" />
+                <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2.5">
+                  <AlertCircle className="h-4 w-4 text-rose-600 shrink-0" />
                   <span>{error}</span>
                 </div>
               )}
 
               {/* Employee Detail Card */}
-              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-1.5">
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-mono uppercase text-slate-400 tracking-wider">
+                  <span className="text-[10px] font-mono uppercase text-slate-500 tracking-wider font-medium">
                     Requested For
                   </span>
-                  <span className="text-[10px] font-mono text-slate-400">
+                  <span className="text-[10px] font-mono text-slate-500">
                     {request?.requestedAt ? new Date(request.requestedAt).toLocaleString() : 'Direct Helpline Request'}
                   </span>
                 </div>
-                <p className="text-sm font-semibold text-white">{email}</p>
+                <p className="text-sm font-semibold text-slate-900">{email}</p>
               </div>
 
               {/* Instructions */}
-              <div className="p-3.5 rounded-xl bg-amber-950/30 border border-amber-800/60 text-amber-200/90 text-xs flex items-start gap-2.5">
-                <ShieldAlert className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+              <div className="p-3.5 rounded-xl bg-amber-50/80 border border-amber-200 text-amber-900 text-xs flex items-start gap-2.5">
+                <ShieldAlert className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
                 <div className="space-y-1">
-                  <p className="font-semibold text-white">How This Works</p>
-                  <p className="text-[11px] text-amber-200/80 leading-relaxed">
+                  <p className="font-semibold text-amber-950">How This Works</p>
+                  <p className="text-[11px] text-amber-800 leading-relaxed">
                     1. When you issue this temporary password, the system hashes it directly into PostgreSQL `auth.users`.<br />
                     2. The user will be required to change their password to their own permanent password on their first login.<br />
                     3. Provide this password to the employee when they call on helpline <strong>7770002696</strong>.
@@ -228,7 +228,7 @@ export function IssueTempPasswordModal({
 
               {/* Temporary Password Field */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-300">
+                <label className="text-xs font-semibold text-slate-700">
                   Temporary Password to Assign
                 </label>
                 <div className="flex items-center gap-2">
@@ -237,14 +237,14 @@ export function IssueTempPasswordModal({
                     value={tempPassword}
                     onChange={(e) => setTempPassword(e.target.value)}
                     required
-                    className="flex-1 rounded-lg bg-slate-950 border border-slate-800 px-3.5 py-2.5 text-xs text-white font-mono tracking-wider focus:border-blue-500 focus:outline-none"
+                    className="flex-1 rounded-lg bg-slate-50 border border-slate-200 px-3.5 py-2.5 text-xs text-slate-900 font-mono tracking-wider focus:bg-white focus:border-blue-600 focus:outline-none transition-colors"
                     placeholder="Enter or generate temporary password"
                   />
                   <button
                     type="button"
                     onClick={handleRegenerate}
                     title="Generate New Password"
-                    className="p-2.5 rounded-lg border border-slate-800 bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-white transition-colors cursor-pointer"
+                    className="p-2.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
                   >
                     <RefreshCw className="h-4 w-4" />
                   </button>
@@ -252,12 +252,12 @@ export function IssueTempPasswordModal({
                     type="button"
                     onClick={() => handleCopy(tempPassword)}
                     title="Copy to clipboard"
-                    className="p-2.5 rounded-lg border border-slate-800 bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-white transition-colors cursor-pointer"
+                    className="p-2.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
                   >
-                    {copied ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
+                    {copied ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
                   </button>
                 </div>
-                <p className="text-[11px] text-slate-400 font-mono">
+                <p className="text-[11px] text-slate-500 font-mono">
                   Minimum 6 characters. Contains letters, numbers, and symbols.
                 </p>
               </div>
@@ -268,14 +268,14 @@ export function IssueTempPasswordModal({
                   type="button"
                   onClick={onClose}
                   disabled={submitting}
-                  className="flex-1 py-2.5 rounded-lg border border-slate-800 bg-slate-900 hover:bg-slate-800 text-slate-300 font-medium text-xs transition-colors cursor-pointer"
+                  className="flex-1 py-2.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-medium text-xs transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="flex-1 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold text-xs transition-colors cursor-pointer shadow-md shadow-blue-600/20 flex items-center justify-center gap-2"
+                  className="flex-1 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold text-xs transition-colors cursor-pointer shadow-md shadow-blue-600/20 flex items-center justify-center gap-2"
                 >
                   {submitting ? (
                     <>

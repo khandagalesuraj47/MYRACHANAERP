@@ -173,15 +173,15 @@ export function TaskMatrixView({
   return (
     <div className="space-y-4">
       {/* Top Filter Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border border-slate-800 bg-slate-900/60">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border border-slate-200 bg-white shadow-sm">
         <div className="flex flex-wrap items-center gap-3">
           {/* Site Filter Dropdown */}
           <div className="flex items-center gap-2">
-            <MapPin className="h-4 w-4 text-blue-400 shrink-0" />
+            <MapPin className="h-4 w-4 text-blue-600 shrink-0" />
             <select
               value={selectedSiteId}
               onChange={(e) => setSelectedSiteId(e.target.value)}
-              className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-xs text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
+              className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-800 focus:border-blue-500 focus:outline-none transition-colors shadow-2xs"
             >
               <option value="ALL">All Operational Sites ({sites.length})</option>
               {sites.map((site) => (
@@ -194,13 +194,13 @@ export function TaskMatrixView({
 
           {/* Search Input */}
           <div className="relative">
-            <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-slate-500" />
+            <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-slate-400" />
             <input
               type="text"
               placeholder="Search personnel by name or email..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="rounded-lg border border-slate-700 bg-slate-950 pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors w-60"
+              className="rounded-lg border border-slate-200 bg-white pl-8 pr-3 py-1.5 text-xs text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none transition-colors w-60 shadow-2xs"
             />
           </div>
         </div>
@@ -208,24 +208,24 @@ export function TaskMatrixView({
         {/* Live Status Notice Toast */}
         <div className="flex items-center gap-2 text-xs">
           {statusNotice && (
-            <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-blue-950 border border-blue-800 text-blue-300 font-mono text-[11px] animate-in fade-in duration-200">
-              <Sparkles className="h-3.5 w-3.5 text-blue-400 shrink-0" />
+            <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 font-mono text-[11px] animate-in fade-in duration-200">
+              <Sparkles className="h-3.5 w-3.5 text-blue-600 shrink-0" />
               <span>{statusNotice}</span>
             </div>
           )}
-          <span className="font-mono text-[11px] text-slate-400 bg-slate-950 px-2 py-1 rounded border border-slate-800">
+          <span className="font-mono text-[11px] text-slate-600 bg-slate-100 px-2 py-1 rounded border border-slate-200">
             {filteredMembers.length} Staff • {coreTasks.length} Core Tasks
           </span>
         </div>
       </div>
 
       {/* High-Density TBAC Responsibility Matrix Table */}
-      <div className="rounded-xl border border-slate-800 bg-slate-950 shadow-2xl overflow-hidden">
-        <div className="overflow-x-auto max-h-[600px] scrollbar-thin scrollbar-thumb-slate-800">
+      <div className="rounded-xl border border-slate-200 bg-white shadow-xs overflow-hidden">
+        <div className="overflow-x-auto max-h-[600px] scrollbar-thin scrollbar-thumb-slate-200">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-slate-800 bg-slate-900/90 sticky top-0 z-20">
-                <th className="p-3.5 font-mono text-[11px] font-bold text-slate-300 uppercase tracking-wider min-w-[240px] sticky left-0 z-30 bg-slate-900/95 backdrop-blur border-r border-slate-800">
+              <tr className="border-b border-slate-200 bg-slate-50 sticky top-0 z-20">
+                <th className="p-3.5 font-mono text-[11px] font-bold text-slate-600 uppercase tracking-wider min-w-[240px] sticky left-0 z-30 bg-slate-50 border-r border-slate-200">
                   Employee / Operating Site
                 </th>
                 {coreTasks.map((task) => {
@@ -233,16 +233,16 @@ export function TaskMatrixView({
                   return (
                     <th
                       key={task.id}
-                      className="p-3 font-mono text-[11px] font-semibold text-slate-300 text-center min-w-[130px] border-r border-slate-800/80 last:border-r-0 hover:bg-slate-800/40 transition-colors"
+                      className="p-3 font-mono text-[11px] font-semibold text-slate-600 text-center min-w-[130px] border-r border-slate-200 last:border-r-0 hover:bg-slate-100/60 transition-colors"
                     >
                       <div className="flex flex-col items-center gap-1">
-                        <div className="p-1 rounded bg-slate-800 border border-slate-700 text-blue-400">
+                        <div className="p-1 rounded bg-blue-50 border border-blue-200 text-blue-600">
                           <IconComp className="h-3.5 w-3.5" />
                         </div>
-                        <span className="text-[11px] font-bold text-white tracking-tight">
+                        <span className="text-[11px] font-bold text-slate-900 tracking-tight">
                           {task.name}
                         </span>
-                        <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-slate-800/80 text-slate-400 uppercase">
+                        <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-slate-100 text-slate-500 uppercase">
                           {task.module}
                         </span>
                       </div>
@@ -253,7 +253,7 @@ export function TaskMatrixView({
             </thead>
 
           {/* Table Body: Employees with Interactive Matrix Checkbox Cells */}
-          <tbody className="divide-y divide-slate-800/60">
+          <tbody className="divide-y divide-slate-100">
             {filteredMembers.length > 0 ? (
               filteredMembers.map((member) => {
                 const assignedSite = member.siteId ? sitesMap.get(member.siteId) : null
@@ -264,35 +264,35 @@ export function TaskMatrixView({
                 return (
                   <tr
                     key={member.id}
-                    className="hover:bg-slate-900/40 transition-colors group"
+                    className="hover:bg-slate-50/80 transition-colors group"
                   >
                     {/* Sticky Employee Details Column */}
-                    <td className="p-3.5 sticky left-0 z-10 bg-slate-950 group-hover:bg-slate-900/90 transition-colors border-r border-slate-800">
+                    <td className="p-3.5 sticky left-0 z-10 bg-white group-hover:bg-slate-50 transition-colors border-r border-slate-200">
                       <div className="flex items-center gap-2.5">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-950/80 border border-blue-800/70 font-mono text-xs font-bold text-blue-300">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 border border-blue-200 font-mono text-xs font-bold text-blue-700">
                           {empName.slice(0, 2).toUpperCase()}
                         </div>
                         <div className="space-y-0.5 min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="font-bold text-white text-xs truncate">
+                            <span className="font-bold text-slate-900 text-xs truncate">
                               {empName}
                             </span>
                             {member.role === 'ADMIN' && (
-                              <span className="font-mono text-[9px] px-1 rounded bg-amber-950/80 border border-amber-800 text-amber-300 uppercase">
+                              <span className="font-mono text-[9px] px-1 rounded bg-amber-50 border border-amber-200 text-amber-800 uppercase">
                                 ADMIN
                               </span>
                             )}
                             {!member.isActive && (
-                              <span className="font-mono text-[9px] px-1 rounded bg-rose-950/80 border border-rose-800 text-rose-300 uppercase">
+                              <span className="font-mono text-[9px] px-1 rounded bg-rose-50 border border-rose-200 text-rose-800 uppercase">
                                 INACTIVE
                               </span>
                             )}
                           </div>
-                          <p className="text-[11px] font-mono text-slate-400 truncate">
+                          <p className="text-[11px] font-mono text-slate-500 truncate">
                             {empEmail}
                           </p>
-                          <div className="flex items-center gap-1 text-[10px] font-mono text-slate-400">
-                            <MapPin className="h-3 w-3 text-amber-400 shrink-0" />
+                          <div className="flex items-center gap-1 text-[10px] font-mono text-slate-600">
+                            <MapPin className="h-3 w-3 text-amber-600 shrink-0" />
                             <span className="truncate">
                               {assignedSite ? `${assignedSite.name} (${assignedSite.code})` : 'No Site Assigned'}
                             </span>
@@ -311,21 +311,21 @@ export function TaskMatrixView({
                         <td
                           key={task.id}
                           onClick={() => !isUpdating && handleToggleCell(member, task)}
-                          className={`p-3 text-center border-r border-slate-800/60 last:border-r-0 cursor-pointer select-none transition-all ${
+                          className={`p-3 text-center border-r border-slate-100 last:border-r-0 cursor-pointer select-none transition-all ${
                             isAssigned
-                              ? 'bg-emerald-950/20 hover:bg-emerald-950/35'
-                              : 'hover:bg-slate-800/30'
+                              ? 'bg-emerald-50/50 hover:bg-emerald-100/60'
+                              : 'hover:bg-slate-100/50'
                           }`}
                         >
                           <div className="flex items-center justify-center">
                             {isUpdating ? (
-                              <Loader2 className="h-4 w-4 animate-spin text-blue-400" />
+                              <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
                             ) : (
                               <div
                                 className={`flex h-5 w-5 items-center justify-center rounded-md border transition-all ${
                                   isAssigned
-                                    ? 'border-emerald-500 bg-emerald-600 text-white shadow-sm shadow-emerald-500/30'
-                                    : 'border-slate-700 bg-slate-900 group-hover:border-slate-600'
+                                    ? 'border-emerald-500 bg-emerald-600 text-white shadow-xs'
+                                    : 'border-slate-300 bg-slate-50 group-hover:border-slate-400'
                                 }`}
                               >
                                 {isAssigned && <Check className="h-3.5 w-3.5 stroke-[3]" />}
@@ -354,7 +354,7 @@ export function TaskMatrixView({
       </div>
 
       {/* Legend & Instructions */}
-      <div className="flex flex-wrap items-center justify-between gap-3 text-[11px] font-mono text-slate-400 pt-1">
+      <div className="flex flex-wrap items-center justify-between gap-3 text-[11px] font-mono text-slate-500 pt-1">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1.5">
             <div className="h-3.5 w-3.5 rounded bg-emerald-600 border border-emerald-500 flex items-center justify-center text-white">
@@ -363,12 +363,12 @@ export function TaskMatrixView({
             <span>Authorized to Execute</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="h-3.5 w-3.5 rounded bg-slate-900 border border-slate-700" />
+            <div className="h-3.5 w-3.5 rounded bg-slate-100 border border-slate-300" />
             <span>Unauthorized</span>
           </div>
         </div>
 
-        <div className="text-slate-400">
+        <div className="text-slate-500">
           Click any cell to toggle real-time operational task authorization.
         </div>
       </div>

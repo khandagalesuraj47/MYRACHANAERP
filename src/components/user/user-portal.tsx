@@ -305,79 +305,9 @@ export function UserPortal({ context }: UserPortalProps) {
           </div>
         </div>
       ) : (
-        /* 7. Default: My Overview (Dedicated User Operational Dashboard - Clean Light MyJio Design) */
+        /* 7. Default: My Overview (Clean Operational Dashboard) */
         <div className="space-y-6 text-left">
-          {/* Welcome Account Card (MyJio Telecom / Account Banner Style) */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-7 shadow-xs space-y-5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-extrabold text-lg shadow-sm shrink-0">
-                  {userFullName.charAt(0).toUpperCase()}
-                </div>
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full">
-                      FIELD OPERATIONS
-                    </span>
-                    <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-                      <ShieldCheck className="h-3 w-3" />
-                      ACTIVE
-                    </span>
-                  </div>
-                  <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900">
-                    Welcome, {userFullName}
-                  </h1>
-                  <p className="text-xs text-slate-500">
-                    Operational Control Center for <strong className="text-slate-700">{siteName}</strong>
-                  </p>
-                </div>
-              </div>
-
-              {/* Operating Site Badge */}
-              <div className="flex items-center gap-2.5 self-start sm:self-auto p-2.5 px-3.5 rounded-xl bg-slate-50 border border-slate-200">
-                <MapPin className="h-4 w-4 text-blue-600 shrink-0" />
-                <div className="flex flex-col text-left">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase">Assigned Site</span>
-                  <span className="text-xs font-bold text-slate-800">{siteName}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Clean Light Summary Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-100">
-              <div className="p-3.5 rounded-xl bg-slate-50/70 border border-slate-200/80 space-y-1">
-                <span className="text-xs font-semibold text-slate-500">Operating Package</span>
-                <p className="text-sm font-bold text-slate-900 truncate">
-                  {context.assignedSite ? context.assignedSite.name : 'Unassigned'}
-                </p>
-                <span className="text-[11px] text-blue-600 font-medium block">
-                  Strict Single-Site Isolation Active
-                </span>
-              </div>
-
-              <div className="p-3.5 rounded-xl bg-slate-50/70 border border-slate-200/80 space-y-1">
-                <span className="text-xs font-semibold text-slate-500">Organization Tenant</span>
-                <p className="text-sm font-bold text-slate-900 truncate">
-                  {organizationName}
-                </p>
-                <span className="text-[11px] text-emerald-600 font-medium block">
-                  Verified Active Enterprise
-                </span>
-              </div>
-
-              <div className="p-3.5 rounded-xl bg-slate-50/70 border border-slate-200/80 space-y-1">
-                <span className="text-xs font-semibold text-slate-500">Assigned Tasks</span>
-                <p className="text-sm font-bold text-slate-900">
-                  {assignedTasks.length} Active Module{assignedTasks.length === 1 ? '' : 's'}
-                </p>
-                <span className="text-[11px] text-slate-500 block">
-                  {assignedTasks.length > 0 ? 'Full operational authority' : 'Awaiting allocation'}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Quick Action Tiles (MyJio-Style Clean Cards) */}
+          {/* Quick Action Tiles (Clean Light Cards) */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-bold text-slate-900">
