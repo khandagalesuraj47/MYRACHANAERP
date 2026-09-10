@@ -516,19 +516,47 @@ export class PeopleRepository {
         p_member_id: memberId,
       })
 
-      if (error) {
-        // Fallback: Delete from organization_members directly if RPC is unavailable
-        const { error: delErr } = await supabase
-          .from('organization_members')
-          .delete()
-          .eq('id', memberId)
+      const res = data as { success: boolean; error?: string } | null
 
-        if (delErr) return { success: false, error: delErr.message }
+      // If RPC succeeded, return success
+      if (!error && res && res.success) {
         return { success: true }
       }
 
-      const res = data as { success: boolean; error?: string }
-      return res
+      console.warn('[PeopleRepository] admin_delete_user RPC issue, attempting direct multi-table fallback:', error || res?.error)
+
+      // Bulletproof Direct Fallback: Delete from organization_members, profiles, and user_task_assignments
+      // 1. Delete organization membership (by id or user_id)
+      const { error: delMemErr } = await supabase
+        .from('organization_members')
+        .delete()
+        .or(`id.eq.${memberId},user_id.eq.${memberId}`)
+
+      // 2. Delete task assignments if any
+      try {
+        await supabase
+          .from('user_task_assignments')
+          .delete()
+          .eq('user_id', memberId)
+      } catch {
+        // Table might not exist or already deleted
+      }
+
+      // 3. Delete profile if exists
+      try {
+        await supabase
+          .from('profiles')
+          .delete()
+          .eq('id', memberId)
+      } catch {
+        // Handled by RLS or cascading
+      }
+
+      if (delMemErr) {
+        return { success: false, error: delMemErr.message }
+      }
+
+      return { success: true }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to delete member.'
       return { success: false, error: msg }

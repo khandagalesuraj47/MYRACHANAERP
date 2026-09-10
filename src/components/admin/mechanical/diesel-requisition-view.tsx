@@ -521,160 +521,308 @@ export function DieselRequisitionView({
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs text-left">
-              <thead className="bg-slate-50 border-b border-slate-200 font-mono uppercase text-[11px] text-slate-600">
-                <tr>
-                  <th className="p-3.5">Requisition No / Date</th>
-                  <th className="p-3.5">Vehicle / Bowser</th>
-                  <th className="p-3.5">Quantity (Ltrs)</th>
-                  <th className="p-3.5">Assigned Petrol Pump</th>
-                  <th className="p-3.5">Authorization Flow</th>
-                  <th className="p-3.5">Status</th>
-                  <th className="p-3.5 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredRequisitions.map((req) => (
-                  <tr key={req.id} className="hover:bg-slate-50/70 transition-colors">
-                    <td className="p-3.5">
-                      <div className="font-mono font-bold text-slate-900">{req.requisitionNo}</div>
-                      <div className="text-[10px] text-slate-400 font-mono">{req.requisitionDate}</div>
-                    </td>
-
-                    <td className="p-3.5">
-                      <div className="font-semibold text-slate-800">{req.bowserVehicleNo}</div>
-                      <div className="text-[10px] text-slate-400 font-mono">Cap: {req.bowserCapacityLiters}L</div>
-                    </td>
-
-                    <td className="p-3.5">
-                      <span className="font-mono font-extrabold text-sm text-slate-900">
-                        {req.requestedLiters.toLocaleString('en-IN')} L
+          <>
+            {/* Native Mobile Card Layout (Auto-fit on all Android phone screens) */}
+            <div className="block md:hidden space-y-3 p-3">
+              {filteredRequisitions.map((req) => (
+                <div
+                  key={req.id}
+                  className="rounded-2xl border border-slate-800 bg-slate-950 p-4 space-y-3 shadow-lg text-left"
+                >
+                  <div className="flex items-start justify-between gap-2 border-b border-slate-800/80 pb-2.5">
+                    <div>
+                      <span className="font-mono text-xs font-bold text-white tracking-wider">
+                        {req.requisitionNo}
                       </span>
-                    </td>
+                      <p className="text-[10px] font-mono text-slate-400">
+                        {req.requisitionDate}
+                      </p>
+                    </div>
 
-                    <td className="p-3.5">
-                      {req.partyName ? (
-                        <span className="font-semibold text-slate-800 flex items-center gap-1">
-                          <Building className="h-3 w-3 text-slate-400" />
-                          <span>{req.partyName}</span>
-                        </span>
-                      ) : (
-                        <span className="text-[11px] text-amber-600 font-mono bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
-                          Pending Party Assignment
-                        </span>
-                      )}
-                    </td>
+                    <span
+                      className={`font-mono text-[9px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider ${
+                        req.status === 'APPROVED'
+                          ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-800'
+                          : req.status === 'PENDING_APPROVAL'
+                          ? 'bg-blue-950/80 text-blue-300 border border-blue-800'
+                          : req.status === 'REJECTED'
+                          ? 'bg-rose-950/80 text-rose-300 border border-rose-800'
+                          : 'bg-amber-950/80 text-amber-300 border border-amber-800'
+                      }`}
+                    >
+                      {req.status.replace('_', ' ')}
+                    </span>
+                  </div>
 
-                    <td className="p-3.5">
-                      <div className="space-y-0.5">
-                        <div className="text-[11px] text-slate-700">
-                          1. Raised: <span className="font-semibold text-slate-900">{req.createdByName || 'Field'}</span>
-                        </div>
-                        <div className="text-[11px] text-slate-700">
-                          2. Verified: <span className="font-semibold text-slate-900">{req.verifiedByName || 'Pending'}</span>
-                        </div>
-                        <div className="text-[11px] text-slate-700">
-                          3. Approved: <span className="font-semibold text-slate-900">{req.approvedByName || 'Pending'}</span>
-                        </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-[10px] font-mono text-slate-400">Requested Quantity</span>
+                      <div className="text-xl font-mono font-extrabold text-white">
+                        {req.requestedLiters.toLocaleString('en-IN')} <span className="text-sm font-normal text-slate-400">Liters</span>
                       </div>
-                    </td>
+                    </div>
 
-                    <td className="p-3.5">
-                      <span
-                        className={`font-mono text-[10px] font-bold px-2 py-0.5 rounded-full inline-block ${
-                          req.status === 'APPROVED'
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                            : req.status === 'PENDING_APPROVAL'
-                            ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                            : req.status === 'REJECTED'
-                            ? 'bg-rose-50 text-rose-700 border border-rose-200'
-                            : 'bg-amber-50 text-amber-700 border border-amber-200'
-                        }`}
+                    <div className="text-right">
+                      <span className="text-[10px] font-mono text-slate-400">Vehicle / Bowser</span>
+                      <div className="text-xs font-semibold text-slate-200">{req.bowserVehicleNo}</div>
+                      <span className="text-[9px] font-mono text-slate-500">Cap: {req.bowserCapacityLiters}L</span>
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl bg-slate-900 border border-slate-800/80 p-2.5 text-xs font-mono">
+                    <span className="text-[10px] text-slate-400">Assigned Petrol Pump:</span>
+                    <div className="text-slate-200 font-semibold flex items-center gap-1.5 mt-0.5">
+                      <Building className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+                      <span className="truncate">{req.partyName || 'Pending Pump Assignment'}</span>
+                    </div>
+                  </div>
+
+                  {/* Flow Status */}
+                  <div className="grid grid-cols-3 gap-1.5 text-[10px] font-mono border-t border-slate-800/60 pt-2 text-slate-400">
+                    <div>
+                      <span className="block text-slate-500 text-[9px]">1. Raised</span>
+                      <span className="text-slate-300 font-medium truncate block">{req.createdByName || 'Field'}</span>
+                    </div>
+                    <div>
+                      <span className="block text-slate-500 text-[9px]">2. Verified</span>
+                      <span className="text-slate-300 font-medium truncate block">{req.verifiedByName || 'Pending'}</span>
+                    </div>
+                    <div>
+                      <span className="block text-slate-500 text-[9px]">3. Approved</span>
+                      <span className="text-slate-300 font-medium truncate block">{req.approvedByName || 'Pending'}</span>
+                    </div>
+                  </div>
+
+                  {/* Mobile Actions Toolbar */}
+                  <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-800">
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveRequisition(req)
+                          setIsPdfModalOpen(true)
+                        }}
+                        className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-xl border border-slate-800 bg-slate-900 text-slate-300 hover:text-white"
+                        title="Print / View PDF"
                       >
-                        {req.status}
-                      </span>
-                    </td>
+                        <Printer className="h-4 w-4" />
+                      </button>
 
-                    <td className="p-3.5 text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        {/* Stage 1 -> 2: Operator Scrutiny / Party Assignment */}
-                        {req.status === 'PENDING_VERIFICATION' && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setActiveRequisition(req)
-                              setSelectedPartyId(req.partyId || '')
-                              setVerificationNotes(req.verificationNotes || '')
-                              setIsVerifyModalOpen(true)
-                            }}
-                            className="px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold transition-colors cursor-pointer border border-blue-200"
-                            title="Verify & Assign Petrol Pump"
-                          >
-                            Assign Party
-                          </button>
-                        )}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveRequisition(req)
+                          setEditLiters(req.requestedLiters.toString())
+                          setEditNotes(req.previousConsumptionNotes || '')
+                          setEditBowser(req.bowserVehicleNo)
+                          setIsEditModalOpen(true)
+                        }}
+                        className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-xl border border-slate-800 bg-slate-900 text-slate-300 hover:text-white"
+                        title="Edit Requisition"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </button>
 
-                        {/* Stage 2 -> 3: General Manager Approval */}
-                        {req.status === 'PENDING_APPROVAL' && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setActiveRequisition(req)
-                              setIsApproveModalOpen(true)
-                            }}
-                            className="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-semibold transition-colors cursor-pointer border border-emerald-200"
-                            title="Review & Approve as GM"
-                          >
-                            Approve
-                          </button>
-                        )}
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(req)}
+                        className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-xl border border-rose-950 bg-rose-950/30 text-rose-400 hover:text-rose-300"
+                        title="Delete Requisition"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
 
-                        {/* Print / View PDF */}
+                    <div className="flex items-center gap-2">
+                      {req.status === 'PENDING_VERIFICATION' && (
                         <button
                           type="button"
                           onClick={() => {
                             setActiveRequisition(req)
-                            setIsPdfModalOpen(true)
+                            setSelectedPartyId(req.partyId || '')
+                            setVerificationNotes(req.verificationNotes || '')
+                            setIsVerifyModalOpen(true)
                           }}
-                          className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 cursor-pointer"
-                          title="Generate Requirement PDF"
+                          className="min-h-[40px] px-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-md shadow-blue-600/20"
                         >
-                          <Printer className="h-4 w-4" />
+                          Assign Pump
                         </button>
+                      )}
 
-                        {/* Edit: Available to participants */}
+                      {req.status === 'PENDING_APPROVAL' && (
                         <button
                           type="button"
                           onClick={() => {
                             setActiveRequisition(req)
-                            setEditLiters(req.requestedLiters.toString())
-                            setEditNotes(req.previousConsumptionNotes || '')
-                            setEditBowser(req.bowserVehicleNo)
-                            setIsEditModalOpen(true)
+                            setIsApproveModalOpen(true)
                           }}
-                          className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 cursor-pointer"
-                          title="Edit Requisition"
+                          className="min-h-[40px] px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-md shadow-emerald-600/20"
                         >
-                          <Edit className="h-4 w-4" />
+                          Approve Indent
                         </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
 
-                        {/* Delete */}
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(req)}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer"
-                          title="Delete Requisition"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
+            {/* Desktop Table Layout (hidden on mobile) */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-xs text-left">
+                <thead className="bg-slate-50 border-b border-slate-200 font-mono uppercase text-[11px] text-slate-600">
+                  <tr>
+                    <th className="p-3.5">Requisition No / Date</th>
+                    <th className="p-3.5">Vehicle / Bowser</th>
+                    <th className="p-3.5">Quantity (Ltrs)</th>
+                    <th className="p-3.5">Assigned Petrol Pump</th>
+                    <th className="p-3.5">Authorization Flow</th>
+                    <th className="p-3.5">Status</th>
+                    <th className="p-3.5 text-right">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filteredRequisitions.map((req) => (
+                    <tr key={req.id} className="hover:bg-slate-50/70 transition-colors">
+                      <td className="p-3.5">
+                        <div className="font-mono font-bold text-slate-900">{req.requisitionNo}</div>
+                        <div className="text-[10px] text-slate-400 font-mono">{req.requisitionDate}</div>
+                      </td>
+
+                      <td className="p-3.5">
+                        <div className="font-semibold text-slate-800">{req.bowserVehicleNo}</div>
+                        <div className="text-[10px] text-slate-400 font-mono">Cap: {req.bowserCapacityLiters}L</div>
+                      </td>
+
+                      <td className="p-3.5">
+                        <span className="font-mono font-extrabold text-sm text-slate-900">
+                          {req.requestedLiters.toLocaleString('en-IN')} L
+                        </span>
+                      </td>
+
+                      <td className="p-3.5">
+                        {req.partyName ? (
+                          <span className="font-semibold text-slate-800 flex items-center gap-1">
+                            <Building className="h-3 w-3 text-slate-400" />
+                            <span>{req.partyName}</span>
+                          </span>
+                        ) : (
+                          <span className="text-[11px] text-amber-600 font-mono bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                            Pending Party Assignment
+                          </span>
+                        )}
+                      </td>
+
+                      <td className="p-3.5">
+                        <div className="space-y-0.5">
+                          <div className="text-[11px] text-slate-700">
+                            1. Raised: <span className="font-semibold text-slate-900">{req.createdByName || 'Field'}</span>
+                          </div>
+                          <div className="text-[11px] text-slate-700">
+                            2. Verified: <span className="font-semibold text-slate-900">{req.verifiedByName || 'Pending'}</span>
+                          </div>
+                          <div className="text-[11px] text-slate-700">
+                            3. Approved: <span className="font-semibold text-slate-900">{req.approvedByName || 'Pending'}</span>
+                          </div>
+                        </div>
+                      </td>
+
+                      <td className="p-3.5">
+                        <span
+                          className={`font-mono text-[10px] font-bold px-2 py-0.5 rounded-full inline-block ${
+                            req.status === 'APPROVED'
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                              : req.status === 'PENDING_APPROVAL'
+                              ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                              : req.status === 'REJECTED'
+                              ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                              : 'bg-amber-50 text-amber-700 border border-amber-200'
+                          }`}
+                        >
+                          {req.status}
+                        </span>
+                      </td>
+
+                      <td className="p-3.5 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          {/* Stage 1 -> 2: Operator Scrutiny / Party Assignment */}
+                          {req.status === 'PENDING_VERIFICATION' && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActiveRequisition(req)
+                                setSelectedPartyId(req.partyId || '')
+                                setVerificationNotes(req.verificationNotes || '')
+                                setIsVerifyModalOpen(true)
+                              }}
+                              className="px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold transition-colors cursor-pointer border border-blue-200"
+                              title="Verify & Assign Petrol Pump"
+                            >
+                              Assign Party
+                            </button>
+                          )}
+
+                          {/* Stage 2 -> 3: General Manager Approval */}
+                          {req.status === 'PENDING_APPROVAL' && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActiveRequisition(req)
+                                setIsApproveModalOpen(true)
+                              }}
+                              className="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-semibold transition-colors cursor-pointer border border-emerald-200"
+                              title="Review & Approve as GM"
+                            >
+                              Approve
+                            </button>
+                          )}
+
+                          {/* Print / View PDF */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActiveRequisition(req)
+                              setIsPdfModalOpen(true)
+                            }}
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 cursor-pointer"
+                            title="Generate Requirement PDF"
+                          >
+                            <Printer className="h-4 w-4" />
+                          </button>
+
+                          {/* Edit: Available to participants */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActiveRequisition(req)
+                              setEditLiters(req.requestedLiters.toString())
+                              setEditNotes(req.previousConsumptionNotes || '')
+                              setEditBowser(req.bowserVehicleNo)
+                              setIsEditModalOpen(true)
+                            }}
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 cursor-pointer"
+                            title="Edit Requisition"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </button>
+
+                          {/* Delete */}
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(req)}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer"
+                            title="Delete Requisition"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
 

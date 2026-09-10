@@ -6,6 +6,7 @@ export interface OrganizationStats {
   totalUsers: number
   activeUsers: number
   adminCount: number
+  pendingMembersCount?: number
   isOrganizationActive: boolean
 }
 
@@ -86,11 +87,13 @@ export class AdminRepository {
       const totalUsers = members.length
       const activeUsers = members.filter((m) => m.is_active).length
       const adminCount = members.filter((m) => m.role === 'ADMIN' && m.is_active).length
+      const pendingMembersCount = members.filter((m) => !m.is_active).length
 
       return {
         totalUsers: totalUsers > 0 ? totalUsers : 1,
         activeUsers: activeUsers > 0 ? activeUsers : 1,
         adminCount: adminCount > 0 ? adminCount : 1,
+        pendingMembersCount,
         isOrganizationActive: isOrgActive,
       }
     } catch (err) {
@@ -99,6 +102,7 @@ export class AdminRepository {
         totalUsers: 1,
         activeUsers: 1,
         adminCount: 1,
+        pendingMembersCount: 0,
         isOrganizationActive: isOrgActive,
       }
     }

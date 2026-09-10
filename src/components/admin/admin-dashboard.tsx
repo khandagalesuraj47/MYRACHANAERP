@@ -91,6 +91,7 @@ export function AdminDashboard() {
       onSignOut={handleSignOut}
       activeModule={activeModule}
       onSelectModule={setActiveModule}
+      pendingApprovalsCount={stats?.pendingMembersCount || 0}
       pageTitle={
         activeModule === 'dashboard'
           ? 'Overview'

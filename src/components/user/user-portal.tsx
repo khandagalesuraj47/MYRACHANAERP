@@ -198,9 +198,9 @@ export function UserPortal({ context }: UserPortalProps) {
         </div>
       </header>
 
-      {/* Navigation Sub-bar (Visible when not actively inside an operational module) */}
+      {/* Navigation Sub-bar (Visible on desktop when not actively inside an operational module) */}
       {!activeTaskCode && (
-        <div className="border-b border-slate-800/80 bg-slate-900/50 px-3 sm:px-6 py-2 flex items-center justify-between gap-2 overflow-x-auto">
+        <div className="hidden md:flex border-b border-slate-800/80 bg-slate-900/50 px-3 sm:px-6 py-2 items-center justify-between gap-2 overflow-x-auto">
           <div className="flex items-center gap-1.5 sm:gap-2">
             <button
               type="button"
@@ -252,7 +252,7 @@ export function UserPortal({ context }: UserPortalProps) {
       )}
 
       {/* Main Content Area */}
-      <main className="flex-1 w-full p-3 sm:p-6 overflow-y-auto">
+      <main className="flex-1 w-full p-3 sm:p-6 overflow-y-auto pb-24 md:pb-6">
         {activeTaskCode === 'DIESEL_REQUISITION' ? (
           <div className="max-w-7xl mx-auto space-y-4">
             <DieselRequisitionView
@@ -418,6 +418,75 @@ export function UserPortal({ context }: UserPortalProps) {
           </div>
         )}
       </main>
+
+      {/* Material 3 Mobile Bottom Navigation */}
+      {!activeTaskCode && (
+        <nav className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-slate-950/95 backdrop-blur-xl border-t border-slate-800/80 px-4 py-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-2xl flex items-center justify-around">
+          <button
+            type="button"
+            onClick={() => {
+              if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(10)
+              setCurrentTab('TASKS')
+            }}
+            className={`relative flex flex-col items-center justify-center py-1 px-3 min-w-[72px] rounded-2xl transition-all cursor-pointer ${
+              currentTab === 'TASKS'
+                ? 'text-blue-400 font-bold'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            {currentTab === 'TASKS' && (
+              <span className="absolute inset-0 bg-blue-500/15 rounded-2xl -z-10" />
+            )}
+            <div className="relative">
+              <Layers className={`h-5 w-5 transition-transform ${currentTab === 'TASKS' ? 'scale-110' : ''}`} />
+              {assignedTasks.length > 0 && (
+                <span className="absolute -top-1.5 -right-2 px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold bg-blue-600 text-white shadow-sm">
+                  {assignedTasks.length}
+                </span>
+              )}
+            </div>
+            <span className="text-[11px] font-medium tracking-tight mt-1">My Tasks</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(10)
+              setCurrentTab('PROFILE')
+            }}
+            className={`relative flex flex-col items-center justify-center py-1 px-3 min-w-[72px] rounded-2xl transition-all cursor-pointer ${
+              currentTab === 'PROFILE'
+                ? 'text-blue-400 font-bold'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            {currentTab === 'PROFILE' && (
+              <span className="absolute inset-0 bg-blue-500/15 rounded-2xl -z-10" />
+            )}
+            <MapPin className={`h-5 w-5 transition-transform ${currentTab === 'PROFILE' ? 'scale-110' : ''}`} />
+            <span className="text-[11px] font-medium tracking-tight mt-1">Site Lock</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(10)
+              setCurrentTab('SETTINGS')
+            }}
+            className={`relative flex flex-col items-center justify-center py-1 px-3 min-w-[72px] rounded-2xl transition-all cursor-pointer ${
+              currentTab === 'SETTINGS'
+                ? 'text-blue-400 font-bold'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            {currentTab === 'SETTINGS' && (
+              <span className="absolute inset-0 bg-blue-500/15 rounded-2xl -z-10" />
+            )}
+            <Settings className={`h-5 w-5 transition-transform ${currentTab === 'SETTINGS' ? 'scale-110' : ''}`} />
+            <span className="text-[11px] font-medium tracking-tight mt-1">Settings</span>
+          </button>
+        </nav>
+      )}
     </div>
   )
 }
