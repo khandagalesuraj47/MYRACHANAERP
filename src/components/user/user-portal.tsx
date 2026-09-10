@@ -21,6 +21,7 @@ import {
   Sparkles,
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
+import { realtimeManager } from '../../lib/realtime-manager'
 import type { UserContextResult } from '../../repositories/auth-context-repository'
 import type { UserTaskAssignment } from '../../types/rbac'
 import { AppSettingsView } from '../common/app-settings-view'
@@ -95,82 +96,44 @@ export function UserPortal({ context }: UserPortalProps) {
     }
   }
 
-  // Real-time Supabase subscriptions on user_task_assignments AND organization_members
+  // 24x7 Zero-Refresh Live Synchronization via realtimeManager
   useEffect(() => {
     if (!context.userId) return
 
-    const channelName = `user-portal-live-${context.userId}`
-    const channel = supabase
-      .channel(channelName)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'user_task_assignments',
-          filter: `user_id=eq.${context.userId}`,
-        },
-        async () => {
-          try {
-            const { data, error } = await supabase
-              .from('user_task_assignments')
-              .select(`
-                task_type_id,
-                can_initiate,
-                can_execute,
-                can_approve,
-                task_types (
-                  id,
-                  code,
-                  name,
-                  module,
-                  icon
-                )
-              `)
-              .eq('user_id', context.userId)
+    // 1. Initial fresh sync
+    void manualSyncTasks()
 
-            if (!error && data) {
-              const freshTasks: UserTaskAssignment[] = data.map((item: any) => {
-                const tt = Array.isArray(item.task_types) ? item.task_types[0] : item.task_types
-                return {
-                  taskTypeId: item.task_type_id,
-                  code: tt?.code || '',
-                  name: tt?.name || 'Task',
-                  module: tt?.module || 'OPERATIONS',
-                  icon: tt?.icon || null,
-                  canInitiate: item.can_initiate,
-                  canExecute: item.can_execute,
-                  canApprove: item.can_approve,
-                }
-              })
-              setLiveTasksOverride(freshTasks)
-            }
-          } catch (err) {
-            console.error('[UserPortal] Realtime tasks sync error:', err)
-          }
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'organization_members',
-          filter: `user_id=eq.${context.userId}`,
-        },
-        async () => {
-          // If membership details (site, role, is_active) change, refresh context
-          await refreshContext()
-        }
-      )
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          setIsLiveConnected(true)
-        }
-      })
+    // 2. Lifecycle & Heartbeat listener (window focus, visibilitychange, 15s interval)
+    const unsubHeartbeat = realtimeManager.registerListener(() => {
+      void manualSyncTasks()
+    })
+
+    // 3. Table subscriptions
+    const unsubTasks = realtimeManager.subscribe(
+      `user-tasks-${context.userId}`,
+      'user_task_assignments',
+      () => {
+        void manualSyncTasks()
+      },
+      `user_id=eq.${context.userId}`
+    )
+
+    const unsubMember = realtimeManager.subscribe(
+      `user-member-${context.userId}`,
+      'organization_members',
+      async () => {
+        await refreshContext()
+        void manualSyncTasks()
+      },
+      `user_id=eq.${context.userId}`
+    )
+
+    setIsLiveConnected(true)
 
     return () => {
-      channel.unsubscribe()
+      unsubHeartbeat()
+      unsubTasks()
+      unsubMember()
     }
   }, [context.userId, refreshContext])
 
@@ -462,7 +425,137 @@ export function UserPortal({ context }: UserPortalProps) {
               </div>
             </div>
 
-            {/* 3. Operational Responsibilities Grid */}
+            {/* 3. MyJio-Style Quick Action Tiles Carousel (Direct Paging) */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-mono font-bold text-slate-400 uppercase tracking-wider">
+                  Quick Action Tiles (MyJio-Style Direct Paging)
+                </h3>
+                <span className="text-[10px] font-mono text-slate-500">
+                  One-Tap Operational Access
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {/* Diesel Tile */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (assignedTasks.some((t) => t.code === 'DIESEL_REQUISITION')) {
+                      setActiveTaskCode('DIESEL_REQUISITION')
+                    }
+                  }}
+                  disabled={!assignedTasks.some((t) => t.code === 'DIESEL_REQUISITION')}
+                  className={`p-4 rounded-2xl border text-left transition-all relative overflow-hidden flex flex-col justify-between h-28 cursor-pointer ${
+                    assignedTasks.some((t) => t.code === 'DIESEL_REQUISITION')
+                      ? 'bg-gradient-to-br from-amber-950/60 via-slate-900 to-slate-950 border-amber-700/60 hover:border-amber-400 hover:scale-[1.02] shadow-lg shadow-amber-950/30'
+                      : 'bg-slate-950/40 border-slate-800/60 opacity-40 cursor-not-allowed'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                      <Fuel className="h-5 w-5" />
+                    </div>
+                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber-950 border border-amber-800 text-amber-300">
+                      FUEL
+                    </span>
+                  </div>
+                  <div>
+                    <p className="font-extrabold text-sm text-white leading-tight">Diesel Indent</p>
+                    <p className="text-[10px] text-amber-300/80 font-mono">Bowsers & Slips</p>
+                  </div>
+                </button>
+
+                {/* Item Master Tile */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (assignedTasks.some((t) => t.code === 'ITEM_MASTER')) {
+                      setActiveTaskCode('ITEM_MASTER')
+                    }
+                  }}
+                  disabled={!assignedTasks.some((t) => t.code === 'ITEM_MASTER')}
+                  className={`p-4 rounded-2xl border text-left transition-all relative overflow-hidden flex flex-col justify-between h-28 cursor-pointer ${
+                    assignedTasks.some((t) => t.code === 'ITEM_MASTER')
+                      ? 'bg-gradient-to-br from-blue-950/60 via-slate-900 to-slate-950 border-blue-700/60 hover:border-blue-400 hover:scale-[1.02] shadow-lg shadow-blue-950/30'
+                      : 'bg-slate-950/40 border-slate-800/60 opacity-40 cursor-not-allowed'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="p-2 rounded-xl bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                      <Package className="h-5 w-5" />
+                    </div>
+                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-blue-950 border border-blue-800 text-blue-300">
+                      STORE
+                    </span>
+                  </div>
+                  <div>
+                    <p className="font-extrabold text-sm text-white leading-tight">Item Master</p>
+                    <p className="text-[10px] text-blue-300/80 font-mono">Materials Catalog</p>
+                  </div>
+                </button>
+
+                {/* Asset Master Tile */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (assignedTasks.some((t) => t.code === 'ASSET_MASTER')) {
+                      setActiveTaskCode('ASSET_MASTER')
+                    }
+                  }}
+                  disabled={!assignedTasks.some((t) => t.code === 'ASSET_MASTER')}
+                  className={`p-4 rounded-2xl border text-left transition-all relative overflow-hidden flex flex-col justify-between h-28 cursor-pointer ${
+                    assignedTasks.some((t) => t.code === 'ASSET_MASTER')
+                      ? 'bg-gradient-to-br from-emerald-950/60 via-slate-900 to-slate-950 border-emerald-700/60 hover:border-emerald-400 hover:scale-[1.02] shadow-lg shadow-emerald-950/30'
+                      : 'bg-slate-950/40 border-slate-800/60 opacity-40 cursor-not-allowed'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                      <Cpu className="h-5 w-5" />
+                    </div>
+                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-950 border border-emerald-800 text-emerald-300">
+                      FLEET
+                    </span>
+                  </div>
+                  <div>
+                    <p className="font-extrabold text-sm text-white leading-tight">Asset Master</p>
+                    <p className="text-[10px] text-emerald-300/80 font-mono">Machinery Fleet</p>
+                  </div>
+                </button>
+
+                {/* Vendor Master Tile */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (assignedTasks.some((t) => t.code === 'VENDOR_MASTER')) {
+                      setActiveTaskCode('VENDOR_MASTER')
+                    }
+                  }}
+                  disabled={!assignedTasks.some((t) => t.code === 'VENDOR_MASTER')}
+                  className={`p-4 rounded-2xl border text-left transition-all relative overflow-hidden flex flex-col justify-between h-28 cursor-pointer ${
+                    assignedTasks.some((t) => t.code === 'VENDOR_MASTER')
+                      ? 'bg-gradient-to-br from-purple-950/60 via-slate-900 to-slate-950 border-purple-700/60 hover:border-purple-400 hover:scale-[1.02] shadow-lg shadow-purple-950/30'
+                      : 'bg-slate-950/40 border-slate-800/60 opacity-40 cursor-not-allowed'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="p-2 rounded-xl bg-purple-500/20 text-purple-400 border border-purple-500/30">
+                      <Building2 className="h-5 w-5" />
+                    </div>
+                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-purple-950 border border-purple-800 text-purple-300">
+                      VENDORS
+                    </span>
+                  </div>
+                  <div>
+                    <p className="font-extrabold text-sm text-white leading-tight">Vendor Master</p>
+                    <p className="text-[10px] text-purple-300/80 font-mono">Suppliers & Hiring</p>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            {/* 4. Operational Responsibilities Grid */}
             <div className="space-y-4">
               <div className="flex items-center justify-between border-b border-slate-800/80 pb-2.5">
                 <div className="space-y-0.5">
