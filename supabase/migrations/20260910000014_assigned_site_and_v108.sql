@@ -171,26 +171,21 @@ GRANT EXECUTE ON FUNCTION public.get_current_user_context() TO authenticated;
 
 -- Seed v1.0.8 release in app_releases
 INSERT INTO public.app_releases (
-    version_name,
     version_code,
+    version_name,
     apk_url,
-    file_size_bytes,
     release_notes,
-    is_mandatory,
-    is_active
+    is_critical
 ) VALUES (
-    '1.0.8',
     8,
-    'https://supabase.co/storage/v1/object/public/apk-releases/app-release-1.0.8.apk',
-    6000000,
+    '1.0.8',
+    'https://gmhvckxqfarpkfpvuspj.supabase.co/storage/v1/object/public/apk-releases/myrachana-erp-v1.0.8.apk',
     'v1.0.8: Fixed user assigned site display across all devices, clean light theme for admin & user portals, removed redundant welcome overview box, universal responsive mobile fit-to-screen.',
-    false,
-    true
+    false
 )
-ON CONFLICT (version_name) DO UPDATE SET
-    version_code = EXCLUDED.version_code,
+ON CONFLICT (version_code) DO UPDATE SET
+    version_name = EXCLUDED.version_name,
     apk_url = EXCLUDED.apk_url,
     release_notes = EXCLUDED.release_notes,
-    is_active = true,
-    updated_at = now();
+    is_critical = EXCLUDED.is_critical;
 
