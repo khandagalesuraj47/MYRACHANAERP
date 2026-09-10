@@ -289,61 +289,49 @@ export function SignInPage({ onSuccess, onNavigateHome }: SignInPageProps) {
 
   return (
     <div className="min-h-[100dvh] md:h-screen w-full max-w-[100vw] flex flex-col md:flex-row overflow-x-hidden overflow-y-auto md:overflow-hidden bg-white text-slate-900 font-sans antialiased">
-      {/* MOBILE BRAND HEADER (100% pure light, high-contrast, zero dark/cyberpunk images) */}
-      <div className="md:hidden w-full bg-white px-6 pt-8 pb-4 text-left border-b border-slate-100 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-md shadow-blue-600/25">
-            <Building2 className="h-6 w-6 stroke-[2.5]" />
-          </div>
-          <div className="space-y-0.5">
-            <div className="flex items-center gap-1.5">
-              <span className="font-extrabold text-base tracking-tight text-slate-900">
-                MY RACHANA <span className="text-blue-600">ERP</span>
-              </span>
-            </div>
-            <p className="text-[11px] font-semibold text-slate-500">
-              Rachana Construction Limited
-            </p>
-          </div>
+      {/* MOBILE TOP IMAGE BANNER */}
+      <div className="md:hidden w-full h-44 relative overflow-hidden bg-slate-900 shrink-0 select-none">
+        <img
+          src="/construction-banner.png"
+          onError={(e) => {
+            e.currentTarget.src = 'construction-banner.png'
+          }}
+          alt="Rachana Construction Operations"
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/30 to-transparent" />
+        <div className="absolute bottom-3 left-4 right-4 z-10 space-y-0.5 text-left">
+          <span className="font-mono text-[9px] font-extrabold tracking-widest text-blue-400 uppercase bg-blue-950/90 px-2 py-0.5 rounded border border-blue-800/80">
+            ENTERPRISE INFRASTRUCTURE
+          </span>
+          <h2 className="text-base font-bold text-white drop-shadow">
+            Rachana Construction Limited
+          </h2>
         </div>
-        <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" title="System Online" />
       </div>
 
-      {/* LEFT PANEL - Construction / Enterprise Brand Panel (Desktop) */}
-      <div className="hidden md:flex md:w-1/2 md:h-full md:min-h-screen relative overflow-hidden bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 select-none shrink-0 p-12 flex-col justify-between text-white">
-        <div className="space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-500/30">
-              <Building2 className="h-6 w-6 stroke-[2.5]" />
-            </div>
-            <div>
-              <span className="font-extrabold text-xl tracking-tight text-white">
-                MY RACHANA <span className="text-blue-400">ERP</span>
-              </span>
-              <p className="text-xs text-blue-200/80 font-medium">Enterprise Cloud Infrastructure</p>
-            </div>
-          </div>
+      {/* LEFT PANEL - Imagery Banner (Desktop) */}
+      <div className="hidden md:flex md:w-1/2 md:h-full md:min-h-screen relative overflow-hidden bg-slate-950 select-none shrink-0">
+        <img
+          src="/construction-banner.png"
+          onError={(e) => {
+            e.currentTarget.src = 'construction-banner.png'
+          }}
+          alt="Rachana Construction Operations"
+          className="absolute inset-0 w-full h-full object-cover opacity-90"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-slate-950/50" />
 
-          <div className="pt-8 space-y-3">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-300 text-xs font-mono font-bold tracking-wide">
-              ENTERPRISE ERP
-            </div>
-            <h2 className="text-3xl lg:text-4xl font-extrabold tracking-tight text-white leading-tight">
-              Rachana Construction Limited
-            </h2>
-            <p className="text-sm text-slate-300 max-w-md leading-relaxed font-light">
-              Unified heavy civil operations, equipment fleet governance, material tracking, and enterprise resource planning.
-            </p>
+        {/* Brand statement over image */}
+        <div className="absolute bottom-8 left-8 right-8 z-20 text-white space-y-3">
+          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded bg-blue-500/20 border border-blue-400/30 text-blue-300 text-xs font-mono tracking-wide">
+            ENTERPRISE ERP
           </div>
-        </div>
-
-        <div className="p-5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md space-y-2 max-w-md">
-          <div className="flex items-center gap-2 text-xs font-bold text-blue-300 font-mono">
-            <ShieldCheck className="h-4 w-4" />
-            <span>Multi-Tier Operating Security</span>
-          </div>
-          <p className="text-xs text-slate-400 leading-relaxed">
-            Role-Based & Task-Based Access Control (TBAC) across all operational highway and civil infrastructure sites.
+          <h2 className="text-3xl font-extrabold tracking-tight text-white drop-shadow-md">
+            Rachana Construction Limited
+          </h2>
+          <p className="text-sm text-slate-300 max-w-md leading-relaxed drop-shadow-sm font-light">
+            Unified heavy civil operations, equipment fleet governance, material tracking, and enterprise resource planning.
           </p>
         </div>
       </div>
