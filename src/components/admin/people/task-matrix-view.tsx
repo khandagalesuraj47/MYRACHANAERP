@@ -60,6 +60,8 @@ export function TaskMatrixView({
 
   // Local optimistic overrides for task assignments: key `${userId}::${taskTypeId}`
   const [overrideAssignments, setOverrideAssignments] = useState<Map<string, boolean>>(new Map())
+  // Local optimistic overrides for sub-permissions: key `${userId}::${taskTypeId}::${field}`
+  const [subPermissionOverrides, setSubPermissionOverrides] = useState<Map<string, boolean>>(new Map())
 
   // Check if a task is assigned to a user (combining server data + optimistic overrides)
   const isTaskAssigned = (userId: string, task: TaskType): boolean => {
@@ -73,6 +75,90 @@ export function TaskMatrixView({
         (t) => t.taskTypeId === task.id || (t.code && t.code === task.code)
       ) ?? false
     )
+  }
+
+  // Check sub-permission status (Initiate, Execute, Approve)
+  const getSubPermission = (
+    userId: string,
+    task: TaskType,
+    field: 'canInitiate' | 'canExecute' | 'canApprove'
+  ): boolean => {
+    const key = `${userId}::${task.id}::${field}`
+    if (subPermissionOverrides.has(key)) {
+      return subPermissionOverrides.get(key)!
+    }
+    const member = members.find((m) => m.userId === userId)
+    const assignment = member?.assignedTasks?.find(
+      (t) => t.taskTypeId === task.id || (t.code && t.code === task.code)
+    )
+    if (!assignment) return false
+    return !!assignment[field]
+  }
+
+  // Handle individual sub-permission toggle (Initiate, Execute, Approve) in real-time
+  const handleToggleSubPermission = async (
+    e: React.MouseEvent,
+    member: EnhancedMember,
+    task: TaskType,
+    field: 'canInitiate' | 'canExecute' | 'canApprove'
+  ) => {
+    e.stopPropagation()
+    const key = `${member.userId}::${task.id}::${field}`
+    const currentVal = getSubPermission(member.userId, task, field)
+    const nextVal = !currentVal
+
+    // Optimistic UI update
+    setSubPermissionOverrides((prev) => {
+      const copy = new Map(prev)
+      copy.set(key, nextVal)
+      return copy
+    })
+
+    // If the task wasn't marked assigned, mark it assigned optimistically
+    const cellKey = `${member.userId}::${task.id}`
+    if (!isTaskAssigned(member.userId, task)) {
+      setOverrideAssignments((prev) => {
+        const copy = new Map(prev)
+        copy.set(cellKey, true)
+        return copy
+      })
+    }
+
+    setUpdatingKey(key)
+    const empName = member.profile?.fullName || member.profile?.email?.split('@')[0] || 'Employee'
+    const label = field === 'canInitiate' ? 'Initiate' : field === 'canExecute' ? 'Execute' : 'Approval'
+
+    try {
+      const res = await PeopleRepository.updateUserTaskSubPermission(
+        organizationId,
+        member.userId,
+        task.id,
+        field,
+        nextVal
+      )
+
+      if (!res.success) {
+        setSubPermissionOverrides((prev) => {
+          const copy = new Map(prev)
+          copy.set(key, currentVal)
+          return copy
+        })
+        setStatusNotice(`Error: ${res.error || 'Failed to update'}`)
+      } else {
+        setStatusNotice(`Live Updated: ${empName} • ${task.name} → ${label}: ${nextVal ? 'ALLOWED' : 'REVOKED'}`)
+      }
+    } catch {
+      setSubPermissionOverrides((prev) => {
+        const copy = new Map(prev)
+        copy.set(key, currentVal)
+        return copy
+      })
+      setStatusNotice(`Failed to update ${label}`)
+    } finally {
+      setUpdatingKey(null)
+      if (onRefresh) onRefresh()
+      setTimeout(() => setStatusNotice(null), 3000)
+    }
   }
 
   // Filtered members list (by Site and Search Query) - ONLY APPROVED / ACTIVE USERS
@@ -301,34 +387,86 @@ export function TaskMatrixView({
                       </div>
                     </td>
 
-                    {/* Dynamic Task Checkbox Cells */}
+                    {/* Dynamic Task Checkbox Cells with Granular Sub-Permissions */}
                     {coreTasks.map((task) => {
                       const key = `${member.userId}::${task.id}`
                       const isAssigned = isTaskAssigned(member.userId, task)
                       const isUpdating = updatingKey === key
+                      const canInit = getSubPermission(member.userId, task, 'canInitiate')
+                      const canExec = getSubPermission(member.userId, task, 'canExecute')
+                      const canAppr = getSubPermission(member.userId, task, 'canApprove')
 
                       return (
                         <td
                           key={task.id}
-                          onClick={() => !isUpdating && handleToggleCell(member, task)}
-                          className={`p-3 text-center border-r border-slate-100 last:border-r-0 cursor-pointer select-none transition-all ${
+                          className={`p-2.5 text-center border-r border-slate-100 last:border-r-0 select-none transition-all ${
                             isAssigned
-                              ? 'bg-emerald-50/50 hover:bg-emerald-100/60'
+                              ? 'bg-emerald-50/40 hover:bg-emerald-50/70'
                               : 'hover:bg-slate-100/50'
                           }`}
                         >
-                          <div className="flex items-center justify-center">
-                            {isUpdating ? (
-                              <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
-                            ) : (
-                              <div
-                                className={`flex h-5 w-5 items-center justify-center rounded-md border transition-all ${
-                                  isAssigned
-                                    ? 'border-emerald-500 bg-emerald-600 text-white shadow-xs'
-                                    : 'border-slate-300 bg-slate-50 group-hover:border-slate-400'
-                                }`}
-                              >
-                                {isAssigned && <Check className="h-3.5 w-3.5 stroke-[3]" />}
+                          <div className="flex flex-col items-center justify-center gap-1.5">
+                            {/* Main Task Assignment Checkbox */}
+                            <button
+                              type="button"
+                              onClick={() => !isUpdating && handleToggleCell(member, task)}
+                              title={isAssigned ? `Revoke ${task.name}` : `Assign ${task.name}`}
+                              className="cursor-pointer focus:outline-none"
+                            >
+                              {isUpdating ? (
+                                <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                              ) : (
+                                <div
+                                  className={`flex h-5 w-5 items-center justify-center rounded-md border transition-all ${
+                                    isAssigned
+                                      ? 'border-emerald-500 bg-emerald-600 text-white shadow-xs hover:bg-emerald-700'
+                                      : 'border-slate-300 bg-slate-50 hover:border-slate-400'
+                                  }`}
+                                >
+                                  {isAssigned && <Check className="h-3.5 w-3.5 stroke-[3]" />}
+                                </div>
+                              )}
+                            </button>
+
+                            {/* Granular Sub-Permission Pills: [I] [E] [A] */}
+                            {isAssigned && (
+                              <div className="flex items-center gap-1 mt-0.5">
+                                <button
+                                  type="button"
+                                  onClick={(e) => handleToggleSubPermission(e, member, task, 'canInitiate')}
+                                  title={`Initiate: ${canInit ? 'ALLOWED' : 'DISABLED'} (Click to toggle)`}
+                                  className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-bold tracking-tight transition-all cursor-pointer ${
+                                    canInit
+                                      ? 'bg-blue-600 text-white shadow-2xs hover:bg-blue-700 ring-1 ring-blue-600/30'
+                                      : 'bg-slate-100 text-slate-400 border border-slate-200 hover:bg-slate-200'
+                                  }`}
+                                >
+                                  I
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(e) => handleToggleSubPermission(e, member, task, 'canExecute')}
+                                  title={`Execute: ${canExec ? 'ALLOWED' : 'DISABLED'} (Click to toggle)`}
+                                  className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-bold tracking-tight transition-all cursor-pointer ${
+                                    canExec
+                                      ? 'bg-emerald-600 text-white shadow-2xs hover:bg-emerald-700 ring-1 ring-emerald-600/30'
+                                      : 'bg-slate-100 text-slate-400 border border-slate-200 hover:bg-slate-200'
+                                  }`}
+                                >
+                                  E
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(e) => handleToggleSubPermission(e, member, task, 'canApprove')}
+                                  title={`Approval: ${canAppr ? 'ALLOWED' : 'DISABLED'} (Click to toggle)`}
+                                  className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-bold tracking-tight transition-all cursor-pointer ${
+                                    canAppr
+                                      ? 'bg-purple-600 text-white shadow-2xs hover:bg-purple-700 ring-1 ring-purple-600/30'
+                                      : 'bg-slate-100 text-slate-400 border border-slate-200 hover:bg-slate-200'
+                                  }`}
+                                >
+                                  A
+                                </button>
                               </div>
                             )}
                           </div>
@@ -355,21 +493,33 @@ export function TaskMatrixView({
 
       {/* Legend & Instructions */}
       <div className="flex flex-wrap items-center justify-between gap-3 text-[11px] font-mono text-slate-500 pt-1">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-wrap">
           <div className="flex items-center gap-1.5">
             <div className="h-3.5 w-3.5 rounded bg-emerald-600 border border-emerald-500 flex items-center justify-center text-white">
               <Check className="h-2.5 w-2.5 stroke-[3]" />
             </div>
-            <span>Authorized to Execute</span>
+            <span>Authorized</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-blue-600 text-white">I</span>
+            <span>Initiate</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-emerald-600 text-white">E</span>
+            <span>Execute</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-purple-600 text-white">A</span>
+            <span>Approval</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="h-3.5 w-3.5 rounded bg-slate-100 border border-slate-300" />
-            <span>Unauthorized</span>
+            <span>Unauthorized / Disabled</span>
           </div>
         </div>
 
         <div className="text-slate-500">
-          Click any cell to toggle real-time operational task authorization.
+          Click checkbox or [I] [E] [A] pills to toggle permissions in real-time.
         </div>
       </div>
     </div>

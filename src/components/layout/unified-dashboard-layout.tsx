@@ -102,7 +102,7 @@ export function UnifiedDashboardLayout({
             className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity"
             onClick={() => setIsMobileOpen(false)}
           />
-          <div className="relative flex w-72 max-w-[85vw] flex-col bg-white border-r border-slate-200 shadow-2xl z-50 animate-in slide-in-from-left duration-200">
+          <div className="relative flex w-72 max-w-[85vw] flex-col bg-white border-r border-slate-200 shadow-2xl z-50 animate-in slide-in-from-left duration-200 pt-7 sm:pt-0">
             <SidebarNav
               className="w-full border-none bg-transparent"
               activeId={activeModule}
@@ -146,12 +146,12 @@ export function UnifiedDashboardLayout({
               <PanelLeftOpen className="w-5 h-5" strokeWidth={1.75} />
             </button>
 
-            {/* Breadcrumb path */}
+            {/* Breadcrumb path - cleanly show title on mobile without squishing */}
             <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-slate-500 min-w-0">
-              <span className="font-medium text-slate-600 truncate max-w-[120px] sm:max-w-[200px]">
+              <span className="hidden sm:inline font-medium text-slate-600 truncate max-w-[120px] sm:max-w-[200px]">
                 {organizationName}
               </span>
-              <span>/</span>
+              <span className="hidden sm:inline">/</span>
               <span className="font-bold text-slate-900 truncate">
                 {pageTitle}
               </span>
@@ -211,7 +211,7 @@ export function UnifiedDashboardLayout({
         </header>
 
         {/* Scrollable Workspace Body */}
-        <main className="flex-1 overflow-y-auto bg-slate-50/60 p-3 sm:p-6 md:p-8 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-slate-300">
+        <main className="flex-1 overflow-y-auto bg-slate-50/60 p-3 sm:p-6 md:p-8 pb-24 sm:pb-8 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-slate-300">
           <div className="max-w-7xl mx-auto w-full">
             {children}
           </div>

@@ -948,6 +948,63 @@ export class PeopleRepository {
   }
 
   /**
+   * Update granular sub-permission (canInitiate, canExecute, canApprove) in real-time
+   */
+  static async updateUserTaskSubPermission(
+    organizationId: string,
+    userId: string,
+    taskTypeId: string,
+    field: 'canInitiate' | 'canExecute' | 'canApprove',
+    value: boolean
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      const dbField = field === 'canInitiate' ? 'can_initiate' : field === 'canExecute' ? 'can_execute' : 'can_approve'
+
+      // Check if assignment exists
+      const { data: existing } = await supabase
+        .from('user_task_assignments')
+        .select('id, can_initiate, can_execute, can_approve')
+        .match({ organization_id: organizationId, user_id: userId, task_type_id: taskTypeId })
+        .maybeSingle()
+
+      if (existing) {
+        const { error } = await supabase
+          .from('user_task_assignments')
+          .update({
+            [dbField]: value,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', existing.id)
+
+        if (error) return { success: false, error: error.message }
+        return { success: true }
+      } else {
+        // Upsert new assignment with specified sub-permission
+        const { error } = await supabase
+          .from('user_task_assignments')
+          .upsert(
+            {
+              organization_id: organizationId,
+              user_id: userId,
+              task_type_id: taskTypeId,
+              can_initiate: field === 'canInitiate' ? value : true,
+              can_execute: field === 'canExecute' ? value : true,
+              can_approve: field === 'canApprove' ? value : false,
+            },
+            { onConflict: 'organization_id,user_id,task_type_id' }
+          )
+
+        if (error) return { success: false, error: error.message }
+        return { success: true }
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to update sub-permission.'
+      console.error('[PeopleRepository] updateUserTaskSubPermission exception:', err)
+      return { success: false, error: msg }
+    }
+  }
+
+  /**
    * Request Temporary Password for an employee.
    * Pre-checks email, files a request in password_reset_requests, and returns Admin Helpline: 7770002696
    */

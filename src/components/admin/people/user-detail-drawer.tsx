@@ -95,18 +95,45 @@ export function UserDetailDrawer({
     setSelectedTasks(map)
   }
 
-  const handleSubPermissionToggle = (
+  const handleSubPermissionToggle = async (
     taskTypeId: string,
     field: 'canInitiate' | 'canExecute' | 'canApprove'
   ) => {
     const map = new Map(selectedTasks)
     const existing = map.get(taskTypeId)
     if (existing) {
+      const nextVal = !existing[field]
       map.set(taskTypeId, {
         ...existing,
-        [field]: !existing[field],
+        [field]: nextVal,
       })
       setSelectedTasks(map)
+
+      // Live persist to database immediately
+      const label = field === 'canInitiate' ? 'Initiate' : field === 'canExecute' ? 'Execute' : 'Approval'
+      try {
+        const res = await PeopleRepository.updateUserTaskSubPermission(
+          organizationId,
+          member.userId,
+          taskTypeId,
+          field,
+          nextVal
+        )
+        if (res.success) {
+          setFeedback({
+            type: 'success',
+            message: `Real-time updated: ${existing.name} • ${label} is now ${nextVal ? 'ALLOWED' : 'REVOKED'}.`,
+          })
+          setTimeout(() => setFeedback(null), 3000)
+        } else {
+          setFeedback({
+            type: 'error',
+            message: `Failed to update ${label}: ${res.error || 'Server error'}`,
+          })
+        }
+      } catch (err: unknown) {
+        console.error('[UserDetailDrawer] Real-time sub-permission update error:', err)
+      }
     }
   }
 

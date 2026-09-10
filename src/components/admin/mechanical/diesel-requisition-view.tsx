@@ -358,22 +358,22 @@ export function DieselRequisitionView({
     .reduce((acc, curr) => acc + curr.requestedLiters, 0)
 
   return (
-    <div className="space-y-6 text-left">
+    <div className="space-y-6 text-left pb-28">
       {/* Top Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-xs font-bold text-orange-700 uppercase tracking-widest bg-orange-50 border border-orange-200 px-2 py-0.5 rounded">
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-mono text-[11px] font-bold text-orange-700 uppercase tracking-widest bg-orange-50 border border-orange-200 px-2 py-0.5 rounded">
               Mechanical Department
             </span>
             <span className="text-slate-300">•</span>
             <span className="text-xs font-mono text-slate-500 font-medium">VTR Site</span>
-            <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-              Diesel Purchase Requisition
-            </h1>
           </div>
-          <p className="text-xs text-slate-500">
-            3-Tier Mechanical Diesel Procuring: Field Requisition (Bowser 2300L) $\rightarrow$ Verification & Party Assignment $\rightarrow$ General Manager Approval.
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+            Diesel Purchase Requisition
+          </h1>
+          <p className="text-xs text-slate-500 leading-relaxed">
+            3-Tier Mechanical Diesel Procuring: Field Requisition (Bowser 2300L) → Verification & Party Assignment → General Manager Approval.
           </p>
         </div>
 
@@ -424,44 +424,44 @@ export function DieselRequisitionView({
         </div>
       )}
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-1">
+      {/* KPI Cards - Responsive 2x2 on Mobile, 4x1 on Desktop */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+        <div className="rounded-2xl border border-slate-200 bg-white p-3.5 sm:p-5 shadow-xs space-y-1">
           <div className="flex items-center justify-between text-slate-500 text-xs font-medium">
-            <span>Pending Scrutiny</span>
-            <Clock className="h-4 w-4 text-amber-500" />
+            <span className="truncate">Pending Scrutiny</span>
+            <Clock className="h-4 w-4 text-amber-500 shrink-0" />
           </div>
-          <div className="text-2xl font-bold font-mono text-slate-900">{pendingScrutinyCount}</div>
-          <p className="text-[11px] text-amber-600 font-medium">Awaiting party assignment</p>
+          <div className="text-xl sm:text-2xl font-bold font-mono text-slate-900">{pendingScrutinyCount}</div>
+          <p className="text-[10px] sm:text-[11px] text-amber-600 font-medium truncate">Awaiting party</p>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-1">
+        <div className="rounded-2xl border border-slate-200 bg-white p-3.5 sm:p-5 shadow-xs space-y-1">
           <div className="flex items-center justify-between text-slate-500 text-xs font-medium">
-            <span>Pending GM Approval</span>
-            <FileText className="h-4 w-4 text-blue-600" />
+            <span className="truncate">Pending GM</span>
+            <FileText className="h-4 w-4 text-blue-600 shrink-0" />
           </div>
-          <div className="text-2xl font-bold font-mono text-slate-900">{pendingGmCount}</div>
-          <p className="text-[11px] text-blue-600 font-medium">Awaiting final GM signature</p>
+          <div className="text-xl sm:text-2xl font-bold font-mono text-slate-900">{pendingGmCount}</div>
+          <p className="text-[10px] sm:text-[11px] text-blue-600 font-medium truncate">Awaiting GM sign</p>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-1">
+        <div className="rounded-2xl border border-slate-200 bg-white p-3.5 sm:p-5 shadow-xs space-y-1">
           <div className="flex items-center justify-between text-slate-500 text-xs font-medium">
-            <span>Total Approved Diesel</span>
-            <Fuel className="h-4 w-4 text-emerald-600" />
+            <span className="truncate">Total Approved</span>
+            <Fuel className="h-4 w-4 text-emerald-600 shrink-0" />
           </div>
-          <div className="text-2xl font-bold font-mono text-slate-900">
+          <div className="text-xl sm:text-2xl font-bold font-mono text-slate-900 truncate">
             {approvedTotalLiters.toLocaleString('en-IN')} L
           </div>
-          <p className="text-[11px] text-slate-400">Cumulative site indent</p>
+          <p className="text-[10px] sm:text-[11px] text-slate-400 truncate">Cumulative indent</p>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-1">
+        <div className="rounded-2xl border border-slate-200 bg-white p-3.5 sm:p-5 shadow-xs space-y-1">
           <div className="flex items-center justify-between text-slate-500 text-xs font-medium">
-            <span>Bowser Tanker Asset</span>
-            <Building className="h-4 w-4 text-slate-500" />
+            <span className="truncate">Bowser Asset</span>
+            <Building className="h-4 w-4 text-slate-500 shrink-0" />
           </div>
-          <div className="text-sm font-bold font-mono text-slate-900 mt-1">2,300 Liters</div>
-          <p className="text-[11px] text-emerald-600 font-medium">VTR Dedicated Mobile Tanker</p>
+          <div className="text-base sm:text-xl font-bold font-mono text-slate-900 mt-1 truncate">2,300 L</div>
+          <p className="text-[10px] sm:text-[11px] text-emerald-600 font-medium truncate">VTR Mobile Tanker</p>
         </div>
       </div>
 
@@ -527,14 +527,14 @@ export function DieselRequisitionView({
               {filteredRequisitions.map((req) => (
                 <div
                   key={req.id}
-                  className="rounded-2xl border border-slate-800 bg-slate-950 p-4 space-y-3 shadow-lg text-left"
+                  className="rounded-2xl border border-slate-200 bg-white p-4 space-y-3 shadow-xs text-left"
                 >
-                  <div className="flex items-start justify-between gap-2 border-b border-slate-800/80 pb-2.5">
+                  <div className="flex items-start justify-between gap-2 border-b border-slate-100 pb-2.5">
                     <div>
-                      <span className="font-mono text-xs font-bold text-white tracking-wider">
+                      <span className="font-mono text-xs font-bold text-slate-900 tracking-wider">
                         {req.requisitionNo}
                       </span>
-                      <p className="text-[10px] font-mono text-slate-400">
+                      <p className="text-[10px] font-mono text-slate-500">
                         {req.requisitionDate}
                       </p>
                     </div>
@@ -542,12 +542,12 @@ export function DieselRequisitionView({
                     <span
                       className={`font-mono text-[9px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider ${
                         req.status === 'APPROVED'
-                          ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-800'
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                           : req.status === 'PENDING_APPROVAL'
-                          ? 'bg-blue-950/80 text-blue-300 border border-blue-800'
+                          ? 'bg-blue-50 text-blue-700 border border-blue-200'
                           : req.status === 'REJECTED'
-                          ? 'bg-rose-950/80 text-rose-300 border border-rose-800'
-                          : 'bg-amber-950/80 text-amber-300 border border-amber-800'
+                          ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                          : 'bg-amber-50 text-amber-700 border border-amber-200'
                       }`}
                     >
                       {req.status.replace('_', ' ')}
@@ -556,45 +556,45 @@ export function DieselRequisitionView({
 
                   <div className="flex items-center justify-between">
                     <div>
-                      <span className="text-[10px] font-mono text-slate-400">Requested Quantity</span>
-                      <div className="text-xl font-mono font-extrabold text-white">
-                        {req.requestedLiters.toLocaleString('en-IN')} <span className="text-sm font-normal text-slate-400">Liters</span>
+                      <span className="text-[10px] font-mono text-slate-500">Requested Quantity</span>
+                      <div className="text-xl font-mono font-extrabold text-slate-900">
+                        {req.requestedLiters.toLocaleString('en-IN')} <span className="text-sm font-normal text-slate-500">Liters</span>
                       </div>
                     </div>
 
                     <div className="text-right">
-                      <span className="text-[10px] font-mono text-slate-400">Vehicle / Bowser</span>
-                      <div className="text-xs font-semibold text-slate-200">{req.bowserVehicleNo}</div>
+                      <span className="text-[10px] font-mono text-slate-500">Vehicle / Bowser</span>
+                      <div className="text-xs font-semibold text-slate-800">{req.bowserVehicleNo}</div>
                       <span className="text-[9px] font-mono text-slate-500">Cap: {req.bowserCapacityLiters}L</span>
                     </div>
                   </div>
 
-                  <div className="rounded-xl bg-slate-900 border border-slate-800/80 p-2.5 text-xs font-mono">
-                    <span className="text-[10px] text-slate-400">Assigned Petrol Pump:</span>
-                    <div className="text-slate-200 font-semibold flex items-center gap-1.5 mt-0.5">
-                      <Building className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+                  <div className="rounded-xl bg-slate-50 border border-slate-200 p-2.5 text-xs font-mono">
+                    <span className="text-[10px] text-slate-500">Assigned Petrol Pump:</span>
+                    <div className="text-slate-900 font-semibold flex items-center gap-1.5 mt-0.5">
+                      <Building className="h-3.5 w-3.5 text-amber-600 shrink-0" />
                       <span className="truncate">{req.partyName || 'Pending Pump Assignment'}</span>
                     </div>
                   </div>
 
                   {/* Flow Status */}
-                  <div className="grid grid-cols-3 gap-1.5 text-[10px] font-mono border-t border-slate-800/60 pt-2 text-slate-400">
+                  <div className="grid grid-cols-3 gap-1.5 text-[10px] font-mono border-t border-slate-100 pt-2 text-slate-500">
                     <div>
-                      <span className="block text-slate-500 text-[9px]">1. Raised</span>
-                      <span className="text-slate-300 font-medium truncate block">{req.createdByName || 'Field'}</span>
+                      <span className="block text-slate-400 text-[9px]">1. Raised</span>
+                      <span className="text-slate-700 font-medium truncate block">{req.createdByName || 'Field'}</span>
                     </div>
                     <div>
-                      <span className="block text-slate-500 text-[9px]">2. Verified</span>
-                      <span className="text-slate-300 font-medium truncate block">{req.verifiedByName || 'Pending'}</span>
+                      <span className="block text-slate-400 text-[9px]">2. Verified</span>
+                      <span className="text-slate-700 font-medium truncate block">{req.verifiedByName || 'Pending'}</span>
                     </div>
                     <div>
-                      <span className="block text-slate-500 text-[9px]">3. Approved</span>
-                      <span className="text-slate-300 font-medium truncate block">{req.approvedByName || 'Pending'}</span>
+                      <span className="block text-slate-400 text-[9px]">3. Approved</span>
+                      <span className="text-slate-700 font-medium truncate block">{req.approvedByName || 'Pending'}</span>
                     </div>
                   </div>
 
                   {/* Mobile Actions Toolbar */}
-                  <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-800">
+                  <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
                     <div className="flex items-center gap-1.5">
                       <button
                         type="button"
@@ -602,7 +602,7 @@ export function DieselRequisitionView({
                           setActiveRequisition(req)
                           setIsPdfModalOpen(true)
                         }}
-                        className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-xl border border-slate-800 bg-slate-900 text-slate-300 hover:text-white"
+                        className="min-h-[38px] min-w-[38px] flex items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-600 hover:text-slate-900 hover:bg-slate-100 cursor-pointer transition-colors"
                         title="Print / View PDF"
                       >
                         <Printer className="h-4 w-4" />
@@ -617,7 +617,7 @@ export function DieselRequisitionView({
                           setEditBowser(req.bowserVehicleNo)
                           setIsEditModalOpen(true)
                         }}
-                        className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-xl border border-slate-800 bg-slate-900 text-slate-300 hover:text-white"
+                        className="min-h-[38px] min-w-[38px] flex items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-600 hover:text-slate-900 hover:bg-slate-100 cursor-pointer transition-colors"
                         title="Edit Requisition"
                       >
                         <Edit className="h-4 w-4" />
@@ -626,7 +626,7 @@ export function DieselRequisitionView({
                       <button
                         type="button"
                         onClick={() => handleDelete(req)}
-                        className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-xl border border-rose-950 bg-rose-950/30 text-rose-400 hover:text-rose-300"
+                        className="min-h-[38px] min-w-[38px] flex items-center justify-center rounded-xl border border-rose-200 bg-rose-50 text-rose-600 hover:text-rose-700 hover:bg-rose-100 cursor-pointer transition-colors"
                         title="Delete Requisition"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -643,7 +643,7 @@ export function DieselRequisitionView({
                             setVerificationNotes(req.verificationNotes || '')
                             setIsVerifyModalOpen(true)
                           }}
-                          className="min-h-[40px] px-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-md shadow-blue-600/20"
+                          className="min-h-[38px] px-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
                         >
                           Assign Pump
                         </button>
@@ -656,7 +656,7 @@ export function DieselRequisitionView({
                             setActiveRequisition(req)
                             setIsApproveModalOpen(true)
                           }}
-                          className="min-h-[40px] px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-md shadow-emerald-600/20"
+                          className="min-h-[38px] px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
                         >
                           Approve Indent
                         </button>
