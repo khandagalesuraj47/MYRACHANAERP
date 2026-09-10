@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Building2,
@@ -51,11 +51,10 @@ export function UserPortal({ context }: UserPortalProps) {
     (t) => !t.code || ALLOWED_CORE_TASKS.includes(t.code)
   )
 
-  const manualSyncTasks = async () => {
+  const manualSyncTasks = useCallback(async () => {
     if (!context.userId) return
     setIsSyncing(true)
     try {
-      await refreshContext()
       const { data, error } = await supabase
         .from('user_task_assignments')
         .select(`
@@ -94,13 +93,13 @@ export function UserPortal({ context }: UserPortalProps) {
     } finally {
       setIsSyncing(false)
     }
-  }
+  }, [context.userId])
 
   // 24x7 Zero-Refresh Live Synchronization via realtimeManager
   useEffect(() => {
     if (!context.userId) return
 
-    // 1. Initial fresh sync
+    // 1. Initial fresh sync (without unmounting the page)
     void manualSyncTasks()
 
     // 2. Lifecycle & Heartbeat listener (window focus, visibilitychange, 15s interval)
@@ -122,7 +121,7 @@ export function UserPortal({ context }: UserPortalProps) {
       `user-member-${context.userId}`,
       'organization_members',
       async () => {
-        await refreshContext()
+        await refreshContext(false)
         void manualSyncTasks()
       },
       `user_id=eq.${context.userId}`
@@ -135,7 +134,7 @@ export function UserPortal({ context }: UserPortalProps) {
       unsubTasks()
       unsubMember()
     }
-  }, [context.userId, refreshContext])
+  }, [context.userId, manualSyncTasks, refreshContext])
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -373,7 +372,10 @@ export function UserPortal({ context }: UserPortalProps) {
 
                 <button
                   type="button"
-                  onClick={manualSyncTasks}
+                  onClick={async () => {
+                    await refreshContext(false)
+                    await manualSyncTasks()
+                  }}
                   disabled={isSyncing}
                   className="flex items-center gap-2 self-start sm:self-center px-4 py-2 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 text-xs font-semibold text-slate-200 hover:text-white transition-all cursor-pointer shadow-md disabled:opacity-50"
                 >
@@ -668,7 +670,10 @@ export function UserPortal({ context }: UserPortalProps) {
 
                     <button
                       type="button"
-                      onClick={manualSyncTasks}
+                      onClick={async () => {
+                        await refreshContext(false)
+                        await manualSyncTasks()
+                      }}
                       disabled={isSyncing}
                       className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white transition-all cursor-pointer shadow-lg shadow-blue-600/20 shrink-0"
                     >

@@ -14,6 +14,7 @@ class RealtimeSyncManager {
   private subscriptions: Map<string, SubscriptionEntry> = new Map()
   private isSubscribed = false
   private heartbeatInterval: any = null
+  private rebuildTimer: any = null
   private listeners: Set<() => void> = new Set()
 
   constructor() {
@@ -43,7 +44,7 @@ class RealtimeSyncManager {
 
     // 2. Subtle 15-second heartbeat to ensure data is always 100% fresh 24x7
     this.heartbeatInterval = setInterval(() => {
-      if (document.visibilityState === 'visible') {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
         this.notifyAllListeners()
       }
     }, 15000)
@@ -73,12 +74,19 @@ class RealtimeSyncManager {
     filter?: string
   ): () => void {
     this.subscriptions.set(key, { table, callback, filter })
-    this.rebuildChannel()
+    this.queueRebuildChannel()
 
     return () => {
       this.subscriptions.delete(key)
-      this.rebuildChannel()
+      this.queueRebuildChannel()
     }
+  }
+
+  private queueRebuildChannel() {
+    if (this.rebuildTimer) clearTimeout(this.rebuildTimer)
+    this.rebuildTimer = setTimeout(() => {
+      this.rebuildChannel()
+    }, 50)
   }
 
   private rebuildChannel() {

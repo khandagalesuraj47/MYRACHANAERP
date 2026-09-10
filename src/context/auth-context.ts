@@ -4,7 +4,7 @@ import type { UserContextResult } from '../repositories/auth-context-repository'
 export interface AuthState {
   context: UserContextResult | null
   loading: boolean
-  refreshContext: () => Promise<UserContextResult>
+  refreshContext: (showLoader?: boolean) => Promise<UserContextResult>
   signOut: () => Promise<void>
   hasPermission: (permissionCode: string) => boolean
   canExecuteTask: (taskCode: string) => boolean

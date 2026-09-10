@@ -7,12 +7,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [context, setContext] = useState<UserContextResult | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const refreshContext = useCallback(async () => {
-    setLoading(true)
-    const res = await AuthContextRepository.getCurrentUserContext()
-    setContext(res)
-    setLoading(false)
-    return res
+  const refreshContext = useCallback(async (showLoader: boolean = false) => {
+    if (showLoader) {
+      setLoading(true)
+    }
+    try {
+      const res = await AuthContextRepository.getCurrentUserContext()
+      setContext(res)
+      return res
+    } finally {
+      if (showLoader) {
+        setLoading(false)
+      }
+    }
   }, [])
 
   const signOut = useCallback(async () => {
