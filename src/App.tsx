@@ -11,6 +11,7 @@ import { AppUpdateBanner } from './components/common/app-update-banner'
 import { supabase } from './lib/supabase'
 import { App as CapApp } from '@capacitor/app'
 import { Capacitor } from '@capacitor/core'
+import { StatusBar, Style } from '@capacitor/status-bar'
 
 function WorkspaceLoadingScreen({ message = 'Loading your workspace...' }: { message?: string }) {
   return (
@@ -305,9 +306,26 @@ function NativeBackButtonHandler() {
   return null
 }
 
+function NativeStatusBarHandler() {
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return
+
+    try {
+      StatusBar.setOverlaysWebView({ overlay: false }).catch(() => {})
+      StatusBar.setBackgroundColor({ color: '#ffffff' }).catch(() => {})
+      StatusBar.setStyle({ style: Style.Dark }).catch(() => {})
+    } catch (e) {
+      console.warn('StatusBar configuration failed', e)
+    }
+  }, [])
+
+  return null
+}
+
 export function App() {
   return (
     <BrowserRouter>
+      <NativeStatusBarHandler />
       <NativeBackButtonHandler />
       <AuthProvider>
         <MandatoryPasswordGuard />

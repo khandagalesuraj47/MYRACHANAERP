@@ -378,28 +378,28 @@ export function DieselRequisitionView({
           </p>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={loadData}
             title="Refresh logs"
-            className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 shadow-xs cursor-pointer"
+            className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-2xs cursor-pointer"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
-            <span>Sync</span>
+            <span className="hidden sm:inline">Sync</span>
           </button>
           <button
             type="button"
             onClick={() => setIsAddPartyModalOpen(true)}
-            className="flex items-center gap-1.5 rounded-lg border border-orange-200 bg-orange-50 hover:bg-orange-100/70 text-orange-800 px-3 py-2 text-xs font-semibold cursor-pointer shadow-xs"
+            className="flex items-center gap-1.5 rounded-xl border border-orange-200 bg-orange-50 hover:bg-orange-100/70 text-orange-800 px-3 py-2 text-xs font-semibold cursor-pointer shadow-2xs"
           >
             <Building className="h-3.5 w-3.5" />
-            <span>+ Add Petrol Pump</span>
+            <span>+ Petrol Pump</span>
           </button>
           <button
             type="button"
             onClick={() => setIsCreateModalOpen(true)}
-            className="flex items-center gap-1.5 rounded-lg bg-orange-600 hover:bg-orange-500 px-3.5 py-2 text-xs font-semibold text-white transition-colors cursor-pointer shadow-xs"
+            className="hidden sm:flex items-center gap-1.5 rounded-xl bg-orange-600 hover:bg-orange-500 px-3.5 py-2 text-xs font-semibold text-white transition-colors cursor-pointer shadow-2xs"
           >
             <Plus className="h-4 w-4" />
             <span>New Diesel Requisition</span>
