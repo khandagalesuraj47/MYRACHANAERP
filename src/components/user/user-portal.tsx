@@ -15,6 +15,10 @@ import {
   ShieldCheck,
   MapPin,
   ChevronRight,
+  PhoneCall,
+  RefreshCw,
+  Clock,
+  Sparkles,
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import type { UserContextResult } from '../../repositories/auth-context-repository'
@@ -39,11 +43,57 @@ export function UserPortal({ context }: UserPortalProps) {
   const [activeTaskCode, setActiveTaskCode] = useState<string | null>(null)
   const [liveTasksOverride, setLiveTasksOverride] = useState<UserTaskAssignment[] | null>(null)
   const [isLiveConnected, setIsLiveConnected] = useState(false)
+  const [isSyncing, setIsSyncing] = useState(false)
 
   const ALLOWED_CORE_TASKS = ['ITEM_MASTER', 'ASSET_MASTER', 'VENDOR_MASTER', 'DIESEL_REQUISITION']
   const assignedTasks = (liveTasksOverride ?? context.assignedTasks ?? []).filter(
     (t) => !t.code || ALLOWED_CORE_TASKS.includes(t.code)
   )
+
+  const manualSyncTasks = async () => {
+    if (!context.userId) return
+    setIsSyncing(true)
+    try {
+      await refreshContext()
+      const { data, error } = await supabase
+        .from('user_task_assignments')
+        .select(`
+          task_type_id,
+          can_initiate,
+          can_execute,
+          can_approve,
+          task_types (
+            id,
+            code,
+            name,
+            module,
+            icon
+          )
+        `)
+        .eq('user_id', context.userId)
+
+      if (!error && data) {
+        const freshTasks: UserTaskAssignment[] = data.map((item: any) => {
+          const tt = Array.isArray(item.task_types) ? item.task_types[0] : item.task_types
+          return {
+            taskTypeId: item.task_type_id,
+            code: tt?.code || '',
+            name: tt?.name || 'Task',
+            module: tt?.module || 'OPERATIONS',
+            icon: tt?.icon || null,
+            canInitiate: item.can_initiate,
+            canExecute: item.can_execute,
+            canApprove: item.can_approve,
+          }
+        })
+        setLiveTasksOverride(freshTasks)
+      }
+    } catch (err) {
+      console.error('[UserPortal] manualSyncTasks error:', err)
+    } finally {
+      setIsSyncing(false)
+    }
+  }
 
   // Real-time Supabase subscriptions on user_task_assignments AND organization_members
   useEffect(() => {
@@ -333,87 +383,264 @@ export function UserPortal({ context }: UserPortalProps) {
             </div>
           </div>
         ) : (
-          /* TAB: TASKS */
-          <div className="w-full max-w-4xl mx-auto space-y-6 text-left">
-            {/* Welcome banner */}
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5 sm:p-8 shadow-2xl space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="inline-flex items-center gap-1 text-[11px] font-mono text-emerald-400 bg-emerald-950/80 border border-emerald-800/60 px-2.5 py-0.5 rounded-full">
+          /* TAB: TASKS (User-Wise Dedicated Operational Dashboard) */
+          <div className="w-full max-w-5xl mx-auto space-y-6 text-left">
+            {/* 1. Welcome & Site Hero Banner */}
+            <div className="rounded-2xl border border-slate-800 bg-gradient-to-br from-slate-900 via-slate-900/90 to-slate-950 p-5 sm:p-7 shadow-2xl space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-1.5">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="inline-flex items-center gap-1 text-[11px] font-mono text-emerald-400 bg-emerald-950/80 border border-emerald-800/60 px-2.5 py-0.5 rounded-full font-bold">
                       <ShieldCheck className="h-3 w-3" />
-                      AUTHORIZED
+                      AUTHORIZED PERSONNEL
                     </span>
                     <span className="text-slate-600">•</span>
-                    <span className="font-mono text-xs text-amber-400">
-                      {context.assignedSite ? context.assignedSite.name : 'Site Lock Active'}
+                    <span className="inline-flex items-center gap-1 text-[11px] font-mono text-amber-400 bg-amber-950/60 border border-amber-800/50 px-2.5 py-0.5 rounded-full">
+                      <MapPin className="h-3 w-3" />
+                      {context.assignedSite ? `${context.assignedSite.name} (${context.assignedSite.code})` : 'Strict Site Lock'}
                     </span>
                   </div>
-                  <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
+                  <h1 className="text-xl sm:text-3xl font-extrabold tracking-tight text-white">
                     Welcome, {userFullName}
                   </h1>
-                  <p className="text-xs text-slate-400 leading-relaxed">
-                    Select any assigned operational responsibility below to execute transactions for <strong className="text-slate-200">{context.assignedSite?.name || organizationName}</strong>.
+                  <p className="text-xs sm:text-sm text-slate-400 leading-relaxed max-w-2xl">
+                    Operational Control Center for <strong className="text-slate-200">{context.assignedSite?.name || organizationName}</strong>. All site actions and logs are synced in real time to the centralized database.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={manualSyncTasks}
+                  disabled={isSyncing}
+                  className="flex items-center gap-2 self-start sm:self-center px-4 py-2 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 text-xs font-semibold text-slate-200 hover:text-white transition-all cursor-pointer shadow-md disabled:opacity-50"
+                >
+                  <RefreshCw className={`h-3.5 w-3.5 text-blue-400 ${isSyncing ? 'animate-spin' : ''}`} />
+                  <span>{isSyncing ? 'Syncing...' : 'Sync Permissions'}</span>
+                </button>
+              </div>
+
+              {/* 2. Key Operational Metrics Row */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+                <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800/80 space-y-1">
+                  <div className="flex items-center justify-between text-slate-400 text-xs">
+                    <span>Operating Site</span>
+                    <MapPin className="h-3.5 w-3.5 text-amber-400" />
+                  </div>
+                  <p className="text-sm font-bold text-white truncate">
+                    {context.assignedSite ? context.assignedSite.name : 'Unassigned'}
+                  </p>
+                  <span className="text-[10px] font-mono text-amber-400/90 block truncate">
+                    {context.assignedSite?.location || 'Single-Site Lock Active'}
+                  </span>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800/80 space-y-1">
+                  <div className="flex items-center justify-between text-slate-400 text-xs">
+                    <span>Real-time Connection</span>
+                    <Radio className="h-3.5 w-3.5 text-emerald-400 animate-pulse" />
+                  </div>
+                  <p className="text-sm font-bold text-emerald-400">
+                    Live Sync Active
+                  </p>
+                  <span className="text-[10px] font-mono text-slate-400 block">
+                    Instant TBAC updates
+                  </span>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800/80 space-y-1">
+                  <div className="flex items-center justify-between text-slate-400 text-xs">
+                    <span>Assigned Modules</span>
+                    <Layers className="h-3.5 w-3.5 text-blue-400" />
+                  </div>
+                  <p className="text-sm font-bold text-white">
+                    {assignedTasks.length} Active Responsibilities
+                  </p>
+                  <span className="text-[10px] font-mono text-blue-400/90 block">
+                    {assignedTasks.length > 0 ? 'Full operational scope' : 'Awaiting admin allocation'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* 3. Operational Responsibilities Grid */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-800/80 pb-2.5">
+                <div className="space-y-0.5">
+                  <h2 className="text-sm font-bold text-white flex items-center gap-2">
+                    <span>Assigned Operational Responsibilities</span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-blue-950 border border-blue-800 text-blue-400">
+                      {assignedTasks.length} Active
+                    </span>
+                  </h2>
+                  <p className="text-xs text-slate-400">
+                    Select a module below to execute and manage field operations.
                   </p>
                 </div>
               </div>
 
-              {/* Tasks Grid */}
-              <div className="space-y-3 pt-2">
-                <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
-                  <h2 className="text-xs font-mono font-bold uppercase tracking-wider text-emerald-400">
-                    Assigned Operational Responsibilities ({assignedTasks.length})
-                  </h2>
-                  <span className="text-[11px] font-mono text-slate-400">
-                    Tap to Launch
-                  </span>
-                </div>
+              {assignedTasks && assignedTasks.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {assignedTasks.map((task) => {
+                    const isDiesel = task.code === 'DIESEL_REQUISITION'
+                    const isItem = task.code === 'ITEM_MASTER'
+                    const isAsset = task.code === 'ASSET_MASTER'
+                    const isVendor = task.code === 'VENDOR_MASTER'
 
-                {assignedTasks && assignedTasks.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {assignedTasks.map((task) => (
-                      <button
-                        type="button"
+                    return (
+                      <div
                         key={task.taskTypeId || task.code}
-                        onClick={() => setActiveTaskCode(task.code)}
-                        className="flex flex-col text-left p-4 rounded-xl border border-slate-800 bg-slate-950/90 hover:border-blue-500 hover:bg-slate-900 transition-all space-y-3 group cursor-pointer shadow-lg"
+                        className="flex flex-col justify-between p-5 rounded-2xl border border-slate-800 bg-slate-900/60 hover:border-blue-500/70 hover:bg-slate-900/90 transition-all space-y-4 shadow-xl group"
                       >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 group-hover:border-blue-500/50">
-                              {getTaskIcon(task.code)}
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div
+                                className={`p-3 rounded-xl border ${
+                                  isDiesel
+                                    ? 'bg-amber-950/60 border-amber-800/80 text-amber-400'
+                                    : isItem
+                                    ? 'bg-blue-950/60 border-blue-800/80 text-blue-400'
+                                    : isAsset
+                                    ? 'bg-emerald-950/60 border-emerald-800/80 text-emerald-400'
+                                    : 'bg-purple-950/60 border-purple-800/80 text-purple-400'
+                                }`}
+                              >
+                                {getTaskIcon(task.code)}
+                              </div>
+                              <div>
+                                <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400">
+                                  {task.module || 'OPERATIONS'}
+                                </span>
+                                <h3 className="font-extrabold text-base text-white group-hover:text-blue-400 transition-colors">
+                                  {task.name}
+                                </h3>
+                              </div>
                             </div>
-                            <div>
-                              <h3 className="font-bold text-sm text-white group-hover:text-blue-400 transition-colors">
-                                {task.name}
-                              </h3>
-                              <span className="text-[10px] font-mono text-slate-400">
-                                Code: {task.code}
-                              </span>
-                            </div>
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-slate-300">
+                              {task.code}
+                            </span>
                           </div>
-                          <ChevronRight className="h-4 w-4 text-slate-500 group-hover:text-blue-400 group-hover:translate-x-0.5 transition-all" />
+
+                          <p className="text-xs text-slate-400 leading-relaxed">
+                            {isDiesel
+                              ? `Create diesel requisitions, approve bowser allocations, issue gate slips, and track fuel consumption at ${context.assignedSite?.name || 'your site'}.`
+                              : isItem
+                              ? `Access and manage the centralized materials catalog, store inventory, and consumables.`
+                              : isAsset
+                              ? `Monitor and configure machinery, excavator units, tipper fleets, and construction equipment.`
+                              : isVendor
+                              ? `Directory of verified diesel suppliers, vehicle hiring vendors, and site contractors.`
+                              : `Execute assigned field transactions and operational approvals.`}
+                          </p>
                         </div>
 
-                        <div className="flex items-center gap-2 pt-2 border-t border-slate-800/60 text-[10px] font-mono text-emerald-400">
-                          {task.canInitiate && <span>• Initiate</span>}
-                          {task.canExecute && <span>• Execute</span>}
-                          {task.canApprove && <span className="text-amber-400">• Approve</span>}
+                        <div className="pt-3 border-t border-slate-800/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div className="flex items-center gap-2 text-[10px] font-mono text-emerald-400">
+                            {task.canInitiate && <span>• Initiate</span>}
+                            {task.canExecute && <span>• Execute</span>}
+                            {task.canApprove && <span className="text-amber-400">• Approve</span>}
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => setActiveTaskCode(task.code)}
+                            className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white transition-all cursor-pointer shadow-md shadow-blue-600/20 group-hover:scale-[1.02]"
+                          >
+                            <span>Open Module</span>
+                            <ChevronRight className="h-4 w-4" />
+                          </button>
                         </div>
-                      </button>
-                    ))}
+                      </div>
+                    )
+                  })}
+                </div>
+              ) : (
+                /* Onboarding State: When user is approved & site-locked but awaiting tasks in TBAC Matrix */
+                <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6 sm:p-8 space-y-6 shadow-xl text-left">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-950 border border-emerald-700 text-emerald-400">
+                          <CheckCircle2 className="h-4 w-4" />
+                          Registration Approved & Site Assigned
+                        </span>
+                      </div>
+                      <h3 className="text-lg sm:text-xl font-bold text-white">
+                        Awaiting Task Assignment in TBAC Matrix
+                      </h3>
+                      <p className="text-xs sm:text-sm text-slate-400 max-w-2xl leading-relaxed">
+                        Your account has been officially approved by the administrator and locked to <strong className="text-amber-400">{context.assignedSite?.name || 'your site'}</strong>. Your company administrator is now assigning your operational tasks (such as Diesel Requisition, Store Management, etc.) from the Admin Task Matrix.
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={manualSyncTasks}
+                      disabled={isSyncing}
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white transition-all cursor-pointer shadow-lg shadow-blue-600/20 shrink-0"
+                    >
+                      <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
+                      <span>{isSyncing ? 'Checking...' : 'Check For Assigned Tasks'}</span>
+                    </button>
                   </div>
-                ) : (
-                  <div className="rounded-xl border border-slate-800/80 bg-slate-950/50 p-8 text-center space-y-2">
-                    <p className="text-sm font-semibold text-slate-200">
-                      No Operational Responsibilities Assigned
-                    </p>
-                    <p className="text-xs text-slate-400 max-w-md mx-auto">
-                      Your administrator has authorized your account but not yet assigned specific tasks. Please contact your site manager or company administrator.
-                    </p>
+
+                  {/* 3-Step Verification Timeline */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">
+                    <div className="p-4 rounded-xl bg-slate-950/80 border border-emerald-800/40 space-y-1.5">
+                      <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold font-mono">
+                        <CheckCircle2 className="h-4 w-4" />
+                        <span>Step 1: Account Created</span>
+                      </div>
+                      <p className="text-[11px] text-slate-400">
+                        Self-registration credentials and password successfully stored in Supabase.
+                      </p>
+                    </div>
+
+                    <div className="p-4 rounded-xl bg-slate-950/80 border border-emerald-800/40 space-y-1.5">
+                      <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold font-mono">
+                        <CheckCircle2 className="h-4 w-4" />
+                        <span>Step 2: Admin Site Lock</span>
+                      </div>
+                      <p className="text-[11px] text-slate-400">
+                        Assigned to <strong className="text-amber-300">{context.assignedSite?.name || 'Operating Site'}</strong> with strict single-site data isolation.
+                      </p>
+                    </div>
+
+                    <div className="p-4 rounded-xl bg-slate-950/80 border border-amber-800/50 space-y-1.5">
+                      <div className="flex items-center gap-2 text-amber-400 text-xs font-bold font-mono">
+                        <Clock className="h-4 w-4 animate-pulse" />
+                        <span>Step 3: Task Assignment</span>
+                      </div>
+                      <p className="text-[11px] text-slate-400">
+                        Admin will tick your operational modules in TBAC Task Matrix. Once ticked, they appear here instantly.
+                      </p>
+                    </div>
                   </div>
-                )}
-              </div>
+
+                  {/* Admin Helpline Notice */}
+                  <div className="p-4 rounded-xl bg-blue-950/30 border border-blue-800/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-blue-900/60 text-blue-400 shrink-0">
+                        <PhoneCall className="h-4 w-4" />
+                      </div>
+                      <div className="space-y-0.5">
+                        <p className="font-bold text-white">Need Immediate Operational Access?</p>
+                        <p className="text-slate-400 text-[11px]">
+                          Contact your administrator or site manager to allocate your tasks.
+                        </p>
+                      </div>
+                    </div>
+
+                    <a
+                      href="tel:7770002696"
+                      className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-blue-600/90 hover:bg-blue-600 text-white font-bold text-xs transition-colors shrink-0"
+                    >
+                      <PhoneCall className="h-3.5 w-3.5" />
+                      <span>Call Admin: 7770002696</span>
+                    </a>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}

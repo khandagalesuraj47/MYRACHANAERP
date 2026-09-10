@@ -405,7 +405,7 @@ export function PeopleDirectory({ organizationId, organizationName }: PeopleDire
       ) : viewMode === 'MATRIX' ? (
         <TaskMatrixView
           organizationId={organizationId}
-          members={members}
+          members={members.filter((m) => m.isActive)}
           sites={sites}
           taskTypes={taskTypes}
           onRefresh={loadData}

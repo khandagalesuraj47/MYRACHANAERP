@@ -16,8 +16,8 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/auth-context'
 
 export const CURRENT_INSTALLED_APP_VERSION = {
-  versionCode: 5,
-  versionName: '1.0.5',
+  versionCode: 6,
+  versionName: '1.0.6',
   buildDate: '2026-09-10',
 }
 

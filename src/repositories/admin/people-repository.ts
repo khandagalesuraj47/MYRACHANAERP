@@ -299,11 +299,18 @@ export class PeopleRepository {
    */
   static async getTaskTypes(organizationId: string): Promise<TaskType[]> {
     const ALLOWED_CORE_TASKS = ['ITEM_MASTER', 'ASSET_MASTER', 'VENDOR_MASTER', 'DIESEL_REQUISITION']
+    const standardUuids: Record<string, string> = {
+      ITEM_MASTER: '00000000-0000-0000-0001-000000000001',
+      ASSET_MASTER: '00000000-0000-0000-0001-000000000002',
+      VENDOR_MASTER: '00000000-0000-0000-0001-000000000003',
+      DIESEL_REQUISITION: '00000000-0000-0000-0001-000000000004',
+    }
+
     const defaultFourTasks: TaskType[] = [
-      { id: 'tt-item-master', organizationId, code: 'ITEM_MASTER', name: 'Item Master', module: 'INVENTORY', defaultPriority: 'MEDIUM', slaHours: 24, requiresApproval: false, isActive: true, icon: 'Package' },
-      { id: 'tt-asset-master', organizationId, code: 'ASSET_MASTER', name: 'Asset Master', module: 'FLEET', defaultPriority: 'MEDIUM', slaHours: 24, requiresApproval: false, isActive: true, icon: 'Wrench' },
-      { id: 'tt-vendor-master', organizationId, code: 'VENDOR_MASTER', name: 'Vendor Master', module: 'PROCUREMENT', defaultPriority: 'MEDIUM', slaHours: 24, requiresApproval: false, isActive: true, icon: 'Briefcase' },
-      { id: 'tt-diesel-req', organizationId, code: 'DIESEL_REQUISITION', name: 'Diesel Requisition', module: 'FUEL', defaultPriority: 'HIGH', slaHours: 12, requiresApproval: true, isActive: true, icon: 'Fuel' },
+      { id: standardUuids.ITEM_MASTER, organizationId, code: 'ITEM_MASTER', name: 'Item Master', module: 'INVENTORY', defaultPriority: 'MEDIUM', slaHours: 24, requiresApproval: false, isActive: true, icon: 'Package' },
+      { id: standardUuids.ASSET_MASTER, organizationId, code: 'ASSET_MASTER', name: 'Asset Master', module: 'FLEET', defaultPriority: 'MEDIUM', slaHours: 24, requiresApproval: false, isActive: true, icon: 'Wrench' },
+      { id: standardUuids.VENDOR_MASTER, organizationId, code: 'VENDOR_MASTER', name: 'Vendor Master', module: 'PROCUREMENT', defaultPriority: 'MEDIUM', slaHours: 24, requiresApproval: false, isActive: true, icon: 'Briefcase' },
+      { id: standardUuids.DIESEL_REQUISITION, organizationId, code: 'DIESEL_REQUISITION', name: 'Diesel Requisition', module: 'FUEL', defaultPriority: 'HIGH', slaHours: 12, requiresApproval: true, isActive: true, icon: 'Fuel' },
     ]
 
     try {
@@ -315,6 +322,18 @@ export class PeopleRepository {
         .order('name', { ascending: true })
 
       if (error || !data || data.length === 0) {
+        // Attempt to auto-seed core tasks in background if empty
+        void supabase.from('task_types').upsert(
+          defaultFourTasks.map((t) => ({
+            organization_id: organizationId,
+            code: t.code,
+            name: t.name,
+            module: t.module,
+            icon: t.icon,
+            is_active: true,
+          })),
+          { onConflict: 'organization_id,code' }
+        )
         return defaultFourTasks
       }
 
@@ -335,7 +354,7 @@ export class PeopleRepository {
           isActive: t.is_active,
         }))
 
-      // Merge any of the 4 core tasks that might not yet be in the remote DB table
+      // Merge any missing core tasks with valid UUIDs
       const existingCodes = new Set(filtered.map((f) => f.code))
       const missingTasks = defaultFourTasks.filter((t) => !existingCodes.has(t.code))
 
@@ -829,12 +848,76 @@ export class PeopleRepository {
     enabled: boolean
   ): Promise<{ success: boolean; error?: string }> {
     try {
+      // 1. Try server RPC toggle_user_task_assignment
+      const { data: rpcData, error: rpcError } = await supabase.rpc('toggle_user_task_assignment', {
+        p_organization_id: organizationId,
+        p_user_id: userId,
+        p_task_identifier: taskTypeId,
+        p_enabled: enabled,
+      })
+
+      if (!rpcError && rpcData?.success) {
+        return { success: true }
+      }
+
+      // 2. Client-side safe resolution if RPC not yet run in SQL editor
+      const standardUuids: Record<string, string> = {
+        ITEM_MASTER: '00000000-0000-0000-0001-000000000001',
+        ASSET_MASTER: '00000000-0000-0000-0001-000000000002',
+        VENDOR_MASTER: '00000000-0000-0000-0001-000000000003',
+        DIESEL_REQUISITION: '00000000-0000-0000-0001-000000000004',
+      }
+
+      let cleanTaskId = (taskTypeId || '').trim()
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+      if (!uuidRegex.test(cleanTaskId)) {
+        // Map legacy string or code to core code
+        let targetCode = 'DIESEL_REQUISITION'
+        const upper = cleanTaskId.toUpperCase()
+        if (upper.includes('ITEM')) targetCode = 'ITEM_MASTER'
+        else if (upper.includes('ASSET')) targetCode = 'ASSET_MASTER'
+        else if (upper.includes('VENDOR')) targetCode = 'VENDOR_MASTER'
+        else if (upper.includes('DIESEL')) targetCode = 'DIESEL_REQUISITION'
+
+        // Check if task exists in task_types table
+        const { data: existingTask } = await supabase
+          .from('task_types')
+          .select('id')
+          .eq('organization_id', organizationId)
+          .eq('code', targetCode)
+          .maybeSingle()
+
+        if (existingTask?.id) {
+          cleanTaskId = existingTask.id
+        } else {
+          // Attempt to insert and retrieve real UUID
+          const { data: createdTask } = await supabase
+            .from('task_types')
+            .upsert(
+              {
+                organization_id: organizationId,
+                code: targetCode,
+                name: targetCode === 'DIESEL_REQUISITION' ? 'Diesel Requisition' : targetCode.replace('_', ' '),
+                module: targetCode === 'DIESEL_REQUISITION' ? 'FUEL' : 'OPERATIONS',
+                icon: targetCode === 'DIESEL_REQUISITION' ? 'Fuel' : 'Layers',
+                is_active: true,
+              },
+              { onConflict: 'organization_id,code' }
+            )
+            .select('id')
+            .maybeSingle()
+
+          cleanTaskId = createdTask?.id || standardUuids[targetCode] || '00000000-0000-0000-0001-000000000004'
+        }
+      }
+
       if (!enabled) {
         // Revoke / Delete
         const { error } = await supabase
           .from('user_task_assignments')
           .delete()
-          .match({ organization_id: organizationId, user_id: userId, task_type_id: taskTypeId })
+          .match({ organization_id: organizationId, user_id: userId, task_type_id: cleanTaskId })
 
         if (error) return { success: false, error: error.message }
         return { success: true }
@@ -846,7 +929,7 @@ export class PeopleRepository {
             {
               organization_id: organizationId,
               user_id: userId,
-              task_type_id: taskTypeId,
+              task_type_id: cleanTaskId,
               can_initiate: true,
               can_execute: true,
               can_approve: true,

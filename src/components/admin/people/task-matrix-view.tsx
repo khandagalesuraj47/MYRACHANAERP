@@ -62,18 +62,27 @@ export function TaskMatrixView({
   const [overrideAssignments, setOverrideAssignments] = useState<Map<string, boolean>>(new Map())
 
   // Check if a task is assigned to a user (combining server data + optimistic overrides)
-  const isTaskAssigned = (userId: string, taskTypeId: string): boolean => {
-    const key = `${userId}::${taskTypeId}`
+  const isTaskAssigned = (userId: string, task: TaskType): boolean => {
+    const key = `${userId}::${task.id}`
     if (overrideAssignments.has(key)) {
       return overrideAssignments.get(key)!
     }
     const member = members.find((m) => m.userId === userId)
-    return member?.assignedTasks?.some((t) => t.taskTypeId === taskTypeId) ?? false
+    return (
+      member?.assignedTasks?.some(
+        (t) => t.taskTypeId === task.id || (t.code && t.code === task.code)
+      ) ?? false
+    )
   }
 
-  // Filtered members list (by Site and Search Query)
+  // Filtered members list (by Site and Search Query) - ONLY APPROVED / ACTIVE USERS
   const filteredMembers = useMemo(() => {
     return members.filter((m) => {
+      // 0. Only APPROVED (active) personnel appear in the Task Matrix! Pending self-registrations do not.
+      if (!m.isActive) {
+        return false
+      }
+
       // 1. Site Filter
       if (selectedSiteId !== 'ALL' && m.siteId !== selectedSiteId) {
         return false
@@ -97,7 +106,7 @@ export function TaskMatrixView({
   // Handle cell checkbox toggle
   const handleToggleCell = async (member: EnhancedMember, task: TaskType) => {
     const key = `${member.userId}::${task.id}`
-    const currentlyAssigned = isTaskAssigned(member.userId, task.id)
+    const currentlyAssigned = isTaskAssigned(member.userId, task)
     const nextState = !currentlyAssigned
 
     // Optimistic UI update
@@ -295,7 +304,7 @@ export function TaskMatrixView({
                     {/* Dynamic Task Checkbox Cells */}
                     {coreTasks.map((task) => {
                       const key = `${member.userId}::${task.id}`
-                      const isAssigned = isTaskAssigned(member.userId, task.id)
+                      const isAssigned = isTaskAssigned(member.userId, task)
                       const isUpdating = updatingKey === key
 
                       return (
